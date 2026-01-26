@@ -1102,13 +1102,14 @@ function initCopertureAttiveV2() {
     for (const item of COPERTURE_ATTIVE_CATALOG) {
         if (!appStatePersona.user.copertureAttive[item.key]) {
             appStatePersona.user.copertureAttive[item.key] = {
-                active: false,
-                compagnia: "",
-                compagniaAltro: "",
-                premioAnnuo: "",
-                scadenza: "",
-                note: ""
-            };
+    active: false,
+    compagnia: "",
+    compagniaAltro: "",
+    premioAnnuo: "",
+    scadenza: "",
+    note: "",
+    capitaleEuro: "" // usato SOLO per alcune coperture (es. TCM)
+};
         }
     }
 
@@ -1136,7 +1137,8 @@ function renderCopertureAttiveV2() {
         const premioVal = rec.premioAnnuo != null ? String(rec.premioAnnuo) : "";
         const scadenzaVal = rec.scadenza != null ? String(rec.scadenza) : "";
         const noteVal = rec.note != null ? String(rec.note) : "";
-
+        const capitaleVal = rec.capitaleEuro != null ? String(rec.capitaleEuro) : "";
+      const isTCM = item.key === "tcm";
         const showAltro = (compagniaVal === "Altro") ? "" : "display:none;";
 
         html += `
@@ -1177,6 +1179,18 @@ function renderCopertureAttiveV2() {
                             <label>Scadenza</label>
                             <input type="date" class="coperturaV2Scadenza" data-copertura-key="${item.key}" value="${scadenzaVal}" />
                         </div>
+${isTCM ? `
+<div>
+    <label>Capitale assicurato (€)</label>
+    <input type="number"
+           min="0"
+           step="1000"
+           class="coperturaV2Capitale"
+           data-copertura-key="${item.key}"
+           value="${capitaleVal}"
+           placeholder="Es. 200000" />
+</div>
+` : ""}
 
                         <div style="grid-column:1/-1;">
                             <label>Note</label>
@@ -1237,6 +1251,14 @@ function renderCopertureAttiveV2() {
             appStatePersona.user.copertureAttive[key].premioAnnuo = e.target.value || "";
         });
     });
+
+   container.querySelectorAll(".coperturaV2Capitale").forEach(el => {
+    el.addEventListener("input", (e) => {
+        const key = e.target.getAttribute("data-copertura-key");
+        if (!key) return;
+        appStatePersona.user.copertureAttive[key].capitaleEuro = e.target.value || "";
+    });
+});
 
     container.querySelectorAll(".coperturaV2Scadenza").forEach(el => {
         el.addEventListener("change", (e) => {
