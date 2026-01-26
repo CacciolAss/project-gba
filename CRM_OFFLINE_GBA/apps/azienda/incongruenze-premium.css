@@ -1,0 +1,433 @@
+/* ============================================================
+   INCONGRUENZE PREMIUM - DESIGN ACCATTIVANTE
+   Generali Business Advisor
+   ============================================================ */
+
+/* Container principale incongruenze */
+#incongruenzeSection {
+    margin-top: 40px;
+    padding: 30px;
+    background: linear-gradient(135deg, #f8f9ff 0%, #fff5f5 100%);
+    border-radius: 24px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
+}
+
+#incongruenzeSection h3 {
+    font-size: 28px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #d71920 0%, #ff4757 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+#incongruenzeSection h3::before {
+    content: "🔍";
+    font-size: 32px;
+    filter: drop-shadow(0 2px 8px rgba(215, 25, 32, 0.3));
+}
+
+.incongruenze-subtitle {
+    color: #64748b;
+    font-size: 15px;
+    margin-bottom: 28px;
+    font-weight: 500;
+}
+
+/* Container grid incongruenze */
+#incongruenzeContainer {
+    display: grid;
+    gap: 20px;
+}
+
+/* Nessuna incongruenza - Success State */
+.incongruenze-success {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    padding: 32px;
+    border-radius: 20px;
+    text-align: center;
+    box-shadow: 
+        0 20px 40px rgba(16, 185, 129, 0.25),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    animation: successPulse 2s ease-in-out infinite;
+}
+
+@keyframes successPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+}
+
+.incongruenze-success-icon {
+    font-size: 64px;
+    margin-bottom: 16px;
+    animation: successBounce 1s ease-in-out;
+}
+
+@keyframes successBounce {
+    0% { transform: scale(0) rotate(-180deg); }
+    50% { transform: scale(1.2) rotate(10deg); }
+    100% { transform: scale(1) rotate(0deg); }
+}
+
+.incongruenze-success-title {
+    font-size: 26px;
+    font-weight: 800;
+    color: white;
+    margin-bottom: 8px;
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+}
+
+.incongruenze-success-text {
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.95);
+    font-weight: 500;
+}
+
+/* Card Incongruenza - Design Premium */
+.incongruenza-card {
+    position: relative;
+    padding: 24px 28px;
+    border-radius: 18px;
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(20px);
+    animation: cardSlideIn 0.5s ease-out forwards;
+}
+
+@keyframes cardSlideIn {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Stagger animation per cards */
+.incongruenza-card:nth-child(1) { animation-delay: 0.1s; }
+.incongruenza-card:nth-child(2) { animation-delay: 0.2s; }
+.incongruenza-card:nth-child(3) { animation-delay: 0.3s; }
+.incongruenza-card:nth-child(4) { animation-delay: 0.4s; }
+.incongruenza-card:nth-child(5) { animation-delay: 0.5s; }
+.incongruenza-card:nth-child(6) { animation-delay: 0.6s; }
+.incongruenza-card:nth-child(7) { animation-delay: 0.7s; }
+.incongruenza-card:nth-child(8) { animation-delay: 0.8s; }
+.incongruenza-card:nth-child(9) { animation-delay: 0.9s; }
+.incongruenza-card:nth-child(10) { animation-delay: 1s; }
+
+.incongruenza-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 
+        0 24px 48px rgba(0, 0, 0, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+/* Livelli di gravità - ALTISSIMO */
+.incongruenza-card.altissimo {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    border-left: 6px solid #dc2626;
+    box-shadow: 
+        0 12px 32px rgba(220, 38, 38, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.incongruenza-card.altissimo::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #dc2626 0%, #ef4444 100%);
+}
+
+.incongruenza-card.altissimo:hover {
+    background: linear-gradient(135deg, #fecaca 0%, #fca5a5 100%);
+    box-shadow: 
+        0 24px 48px rgba(220, 38, 38, 0.25),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+/* Livelli di gravità - ALTO */
+.incongruenza-card.alto {
+    background: linear-gradient(135deg, #fed7aa 0%, #fdba74 100%);
+    border-left: 6px solid #ea580c;
+    box-shadow: 
+        0 12px 32px rgba(234, 88, 12, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.incongruenza-card.alto::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #ea580c 0%, #f97316 100%);
+}
+
+.incongruenza-card.alto:hover {
+    background: linear-gradient(135deg, #fdba74 0%, #fb923c 100%);
+    box-shadow: 
+        0 24px 48px rgba(234, 88, 12, 0.25),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+/* Livelli di gravità - MEDIO */
+.incongruenza-card.medio {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border-left: 6px solid #d97706;
+    box-shadow: 
+        0 12px 32px rgba(217, 119, 6, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.incongruenza-card.medio::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #d97706 0%, #f59e0b 100%);
+}
+
+.incongruenza-card.medio:hover {
+    background: linear-gradient(135deg, #fde68a 0%, #fcd34d 100%);
+    box-shadow: 
+        0 24px 48px rgba(217, 119, 6, 0.25),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+/* Livelli di gravità - BASSO */
+.incongruenza-card.basso {
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    border-left: 6px solid #2563eb;
+    box-shadow: 
+        0 12px 32px rgba(37, 99, 235, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.incongruenza-card.basso::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #2563eb 0%, #3b82f6 100%);
+}
+
+.incongruenza-card.basso:hover {
+    background: linear-gradient(135deg, #bfdbfe 0%, #93c5fd 100%);
+    box-shadow: 
+        0 24px 48px rgba(37, 99, 235, 0.25),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+/* Icona livello */
+.incongruenza-icon {
+    flex-shrink: 0;
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(10px);
+    box-shadow: 
+        0 8px 16px rgba(0, 0, 0, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    transition: all 0.3s ease;
+}
+
+.incongruenza-card:hover .incongruenza-icon {
+    transform: rotate(10deg) scale(1.1);
+}
+
+/* Contenuto testo */
+.incongruenza-content {
+    flex: 1;
+}
+
+.incongruenza-level {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    margin-bottom: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.incongruenza-card.altissimo .incongruenza-level {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    color: white;
+}
+
+.incongruenza-card.alto .incongruenza-level {
+    background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
+    color: white;
+}
+
+.incongruenza-card.medio .incongruenza-level {
+    background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+    color: white;
+}
+
+.incongruenza-card.basso .incongruenza-level {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    color: white;
+}
+
+.incongruenza-message {
+    font-size: 16px;
+    line-height: 1.6;
+    color: #1e293b;
+    font-weight: 500;
+}
+
+/* Badge categoria */
+.incongruenza-categoria {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.08);
+    color: #475569;
+    margin-top: 10px;
+}
+
+/* Summary statistiche */
+.incongruenze-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+    padding: 24px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+.incongruenze-stat {
+    text-align: center;
+    padding: 16px;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.incongruenze-stat:hover {
+    transform: translateY(-4px);
+}
+
+.incongruenze-stat.altissimo {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+}
+
+.incongruenze-stat.alto {
+    background: linear-gradient(135deg, #fed7aa 0%, #fdba74 100%);
+}
+
+.incongruenze-stat.medio {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+}
+
+.incongruenze-stat.basso {
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+}
+
+.incongruenze-stat-number {
+    font-size: 36px;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 4px;
+}
+
+.incongruenze-stat.altissimo .incongruenze-stat-number {
+    color: #dc2626;
+}
+
+.incongruenze-stat.alto .incongruenze-stat-number {
+    color: #ea580c;
+}
+
+.incongruenze-stat.medio .incongruenze-stat-number {
+    color: #d97706;
+}
+
+.incongruenze-stat.basso .incongruenze-stat-number {
+    color: #2563eb;
+}
+
+.incongruenze-stat-label {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #64748b;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    #incongruenzeSection {
+        padding: 20px;
+    }
+    
+    #incongruenzeSection h3 {
+        font-size: 22px;
+    }
+    
+    .incongruenza-card {
+        padding: 18px 20px;
+        gap: 16px;
+    }
+    
+    .incongruenza-icon {
+        width: 48px;
+        height: 48px;
+        font-size: 26px;
+    }
+    
+    .incongruenza-message {
+        font-size: 15px;
+    }
+    
+    .incongruenze-summary {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        padding: 16px;
+    }
+}
+
+/* Effetto shimmer per caricamento */
+@keyframes shimmer {
+    0% { background-position: -1000px 0; }
+    100% { background-position: 1000px 0; }
+}
+
+.incongruenza-card.loading {
+    background: linear-gradient(
+        90deg,
+        #f3f4f6 0%,
+        #e5e7eb 50%,
+        #f3f4f6 100%
+    );
+    background-size: 1000px 100%;
+    animation: shimmer 2s infinite;
+}

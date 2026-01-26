@@ -1,0 +1,3941 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8" />
+    <title>Generali Business Advisor</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- CSS -->
+<link rel="stylesheet" href="../../shared/style.css" />
+<link rel="stylesheet" href="incongruenze-premium.css" />
+
+<!-- Librerie -->
+<script src="../../shared/xlsx.full.min.js"></script>
+<script src="../../shared/chart.min.js"></script>
+
+<!-- Dataset e moduli azienda -->
+<script src="domande_full.js"></script>
+
+<!-- Dati comuni -->
+<script src="../../shared/consulenti.js"></script>
+<script src="../../shared/comuni.js"></script>
+
+<!-- Motori incongruenze -->
+<script src="incongruenze.js"></script>
+<script src="incongruenze-premium.js"></script>
+
+<!-- Config e scoring -->
+<script src="../../shared/prodotti_config.js"></script>
+<script src="scoring_commerciale.js"></script>
+
+<!-- Sessione -->
+<script src="../../shared/session_global.js"></script>
+
+
+    <style>
+        /* Qualche piccolo ritocco estetico, senza rompere il tuo style.css */
+
+        body {
+            background: radial-gradient(circle at top, #fdf2f2 0, #ffffff 45%, #f5f5f5 100%);
+        }
+
+        .login-logo {
+            font-size: 42px;
+            font-weight: 800;
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 10px auto;
+        }
+
+        .section-card h2 {
+            font-size: 22px;
+            margin-bottom: 12px;
+        }
+
+        .pill-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            background: #ffe9e5;
+            color: #b91c1c;
+            margin-left: 6px;
+        }
+
+        .area-score-card {
+            flex: 1 1 230px;
+            border-radius: 12px;
+            padding: 14px 16px;
+            background: #fafafa;
+            border: 1px solid #e4e4e4;
+        }
+
+        .area-score-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #222;
+        }
+
+        .area-score-value {
+            font-size: 22px;
+            font-weight: 700;
+            color: #b91c1c;
+        }
+
+        /* Toast */
+        #toastContainer {
+            position: fixed;
+            top: 18px;
+            right: 18px;
+            z-index: 9999;
+        }
+
+        .toast {
+            background: #111827;
+            color: #fff;
+            padding: 10px 14px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            font-size: 13px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+            opacity: 0;
+            transform: translateY(-6px);
+            transition: all .25s ease;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .toast-error {
+            background: #b91c1c;
+        }
+
+        .toast-success {
+            background: #15803d;
+        }
+        /* Validazione P.IVA */
+    #pivaStatus {
+    margin-top: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+#pivaStatus.valid {
+    color: #15803d;
+}
+
+#pivaStatus.invalid {
+    color: #b91c1c;
+}
+
+.input-valid {
+    border-color: #15803d !important;
+    background-color: #f0fdf4 !important;
+}
+
+.input-invalid {
+    border-color: #b91c1c !important;
+    background-color: #fef2f2 !important;
+}
+/* Nascondi campi "Altro" di default */
+        .altroField {
+            display: none;
+            margin-top: 8px;
+        }
+
+        .altroField.show {
+            display: block;
+        }
+/* Counter progresso questionario */
+        #progressCounter {
+            display: inline-block;
+            background: linear-gradient(135deg, #b91c1c 0%, #7f1d1d 100%);
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(185, 28, 28, 0.2);
+        }
+
+        #progressCounter .numero {
+            font-size: 18px;
+        }
+/* Loading Spinner */
+        #loadingOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        }
+
+        #loadingOverlay.show {
+            display: flex;
+        }
+
+        .spinner-box {
+            background: #fff;
+            padding: 30px 40px;
+            border-radius: 16px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            margin: 0 auto 16px auto;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #b91c1c;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .spinner-text {
+            font-size: 15px;
+            font-weight: 600;
+            color: #374151;
+            margin: 0;
+        }
+        /* Domande premium (pulsanti risposta) */
+        .domanda-block {
+            margin-bottom: 32px;
+            padding-bottom: 22px;
+            border-bottom: 1px solid #E4E4E4;
+        }
+
+        .domanda-titolo {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #111827;
+        }
+
+        .domanda-sub {
+            color: #6b7280;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .risposta-box {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .risposta-option {
+            padding: 11px 14px;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.18s ease;
+            font-size: 14px;
+            line-height: 1.35;
+            user-select: none;
+        }
+
+        .risposta-option:hover {
+            background: #f3f4f6;
+        }
+
+        .risposta-option.selected {
+            background: var(--rosso, #b91c1c);
+            border-color: var(--rosso-dark, #7f1d1d);
+            color: #fff;
+            box-shadow: 0 0 0 1px rgba(0,0,0,0.08);
+        }
+
+        /* Piccoli aiuti layout */
+        .two-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+@media (max-width: 900px) {
+            .two-columns {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Autocomplete Comuni */
+        .autocomplete-container {
+            position: relative;
+        }
+
+        .autocomplete-items {
+            position: absolute;
+            border: 1px solid #d4d4d4;
+            border-top: none;
+            z-index: 99;
+            top: 100%;
+            left: 0;
+            right: 0;
+            max-height: 200px;
+            overflow-y: auto;
+            background-color: #fff;
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .autocomplete-item {
+            padding: 10px;
+            cursor: pointer;
+            background-color: #fff;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 14px;
+        }
+
+        .autocomplete-item:hover {
+            background-color: #f3f4f6;
+        }
+
+        .autocomplete-item strong {
+            color: #b91c1c;
+        }
+
+        .autocomplete-item small {
+            display: block;
+            color: #6b7280;
+            font-size: 12px;
+            margin-top: 2px;
+        }
+/* ============================
+   POLIZZE — Pulsanti selezione stile “pill-button”
+============================ */
+.polizze-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.polizza-pill {
+    padding: 10px 14px;
+    background: #f3f4f6;
+    border: 1px solid #d1d5db;
+    border-radius: 999px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+}
+
+.polizza-pill:hover {
+    background: #e5e7eb;
+}
+
+.polizza-pill.selected {
+    background: #b91c1c;
+    border-color: #7f1d1d;
+    color: white;
+    box-shadow: 0 0 0 2px rgba(185, 28, 28, 0.25);
+}
+
+    </style>
+</head>
+
+<body>
+
+<!-- ===========================
+     LOGIN OVERLAY
+=========================== -->
+<div id="loginOverlay" class="overlay">
+    <div class="login-box">
+        <div class="login-logo">G</div>
+        <h2>Generali Business Advisor</h2>
+        <p class="login-sub">Accesso consulenti</p>
+
+        <label>Username</label>
+        <input type="text" id="loginUser" placeholder="nome cognome" />
+
+        <label>Password</label>
+        <input
+    type="password"
+    id="loginPass"
+    placeholder="●●●●●●●●"
+    onkeydown="if (event.key === 'Enter') { eseguiLogin(); }"
+/>
+
+
+        <button class="btn" onclick="eseguiLogin()">Accedi</button>
+    </div>
+</div>
+
+<!-- Toast -->
+<div id="toastContainer"></div>
+
+<!-- Loading Spinner -->
+<div id="loadingOverlay">
+    <div class="spinner-box">
+        <div class="spinner"></div>
+        <p class="spinner-text" id="loadingText">Elaborazione in corso...</p>
+    </div>
+</div>
+
+<!-- ===========================
+     MAIN CONTAINER
+=========================== -->
+<div id="mainContainer" style="display:none;">
+    <div class="container">
+
+        <!-- ===========================
+             ANAGRAFICA AZIENDALE
+        ============================ -->
+<!-- ===========================
+             ARCHIVIO ANALISI
+        ============================ -->
+        <div class="section-card">
+            <h2>
+                📁 Archivio Analisi
+                <span class="pill-badge">Storico</span>
+            </h2>
+
+            <div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap;">
+                <input type="text" id="searchPIVA" placeholder="Cerca per P.IVA (es: 12345678901)" 
+                       style="flex:1; min-width:250px;" />
+                <button class="btn" onclick="cercaInArchivio()" style="flex:0;">
+                    🔍 Cerca
+                </button>
+                <button class="btn" onclick="mostraArchivioCompleto()" style="flex:0;">
+                    📋 Mostra Tutte
+                </button>
+                <button class="btn" onclick="esportaArchivioJSON()" style="flex:0; background:#15803d;">
+                    💾 Backup
+                </button>
+                <button class="btn" onclick="svuotaArchivioConferma()" 
+                        style="flex:0; background:#6b7280;">
+                    🗑️ Svuota
+                </button>
+            </div>
+
+            <div id="archivioRisultati" style="margin-top:16px;">
+                <p style="color:#6b7280; font-size:14px;">
+                    Usa la ricerca per trovare analisi precedenti o clicca "Mostra Tutte" 
+                    per visualizzare l'intero archivio.
+                </p>
+            </div>
+        </div>
+        <div class="section-card">
+            <h2>
+                Anagrafica Aziendale
+                <span class="pill-badge">Step 1</span>
+            </h2>
+
+            <div class="form-grid">
+
+                <div>
+                    <label>Ragione Sociale</label>
+                    <input type="text" id="ragioneSociale" placeholder="Inserisci ragione sociale" />
+                </div>
+
+                <div>
+                    <label>Partita IVA</label>
+                    <input type="text" id="partitaIVA" maxlength="11" placeholder="11 cifre" />
+                    <div id="pivaStatus"></div>
+                </div>
+
+                <div>
+                    <label>Settore</label>
+                    <select id="settore">
+                        <option value="">Seleziona...</option>
+                        <option value="industria">Industria</option>
+                        <option value="artigianato">Artigianato</option>
+                        <option value="commercio">Commercio</option>
+                        <option value="servizi">Servizi</option>
+                        <option value="logistica">Logistica</option>
+                        <option value="tecnologia">Tecnologia</option>
+                        <option value="agroalimentare">Agroalimentare</option>
+                        <option value="altro">Altro…</option>
+                    </select>
+                    <input type="text" id="settoreAltro" class="altroField" placeholder="Specifica settore" />
+                </div>
+
+                <div>
+                    <label>Forma Giuridica</label>
+                    <select id="formaGiuridica">
+                        <option value="">Seleziona...</option>
+                        <option value="ditta">Ditta Individuale</option>
+                        <option value="snc">SNC</option>
+                        <option value="sas">SAS</option>
+                        <option value="srl">SRL</option>
+                        <option value="spa">SPA</option>
+                        <option value="cooperativa">Cooperativa</option>
+                        <option value="altro">Altro…</option>
+                    </select>
+                    <input type="text" id="formaAltro" class="altroField" placeholder="Specifica forma giuridica" />
+                </div>
+
+                <div>
+                    <label>Numero Dipendenti</label>
+                    <input type="number" id="dipendenti" min="0" placeholder="Es: 25" />
+                </div>
+
+                <div>
+                    <label>Interlocutore Principale</label>
+                    <select id="interlocutore">
+                        <option value="">Seleziona...</option>
+                        <option value="titolare">Titolare</option>
+                        <option value="direttore">Direttore Generale</option>
+                        <option value="cfo">CFO</option>
+                        <option value="amministratore delegato">Amministratore Delegato</option>
+                        <option value="hr">HR Manager</option>
+                        <option value="altro">Altro…</option>
+                    </select>
+                    <input type="text" id="interlocutoreAltro" class="altroField" placeholder="Specifica ruolo" />
+                </div>
+
+                <div>
+                    <label>Fatturato (Euro)</label>
+                    <input type="text" id="fatturato" placeholder="Inserisci importo" />
+                </div>
+
+           <div>
+                    <label>Città</label>
+                    <input type="text" id="citta" placeholder="Es: Milano" />
+                </div>
+
+                <div>
+                    <label>Provincia</label>
+                    <input type="text" id="provincia" placeholder="Es: PO" />
+                </div>
+
+                <div>
+                    <label>CAP</label>
+                    <input type="text" id="cap" placeholder="Es: 20100" />
+                </div>
+
+                <div>
+                    <label>Email Aziendale</label>
+                    <input type="email" id="emailAzienda" placeholder="nome@dominio.it" />
+                </div>
+
+                <div>
+                    <label>Telefono</label>
+                    <input type="text" id="telefonoAzienda" placeholder="+39 333 1234567" />
+                </div>
+
+                <div>
+                    <label>Consulente</label>
+                    <input type="text" id="consulenteNome" readonly />
+                </div>
+
+                <div>
+                    <label>Email Consulente</label>
+                    <input type="text" id="consulenteEmail" readonly />
+                </div>
+            </div>
+<hr style="margin:20px 0; border:none; border-top:1px solid #e5e7eb;">
+
+<h3 style="margin-top:0; margin-bottom:10px; font-size:16px; color:#111827;">
+    Struttura operativa & coperture in essere
+</h3>
+
+<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px;">
+
+    <!-- TIPO STRUTTURA -->
+    <div>
+        <label>Tipologia principale di struttura</label>
+        <select id="tipoStruttura">
+            <option value="">Seleziona.</option>
+            <option value="ufficio">Ufficio / Studio</option>
+            <option value="negozio">Negozio / Punto vendita</option>
+            <option value="laboratorio">Laboratorio / Artigianale</option>
+            <option value="capannone">Capannone industriale</option>
+            <option value="magazzino">Magazzino / Logistica</option>
+            <option value="misto">Misto (es. uffici + produzione)</option>
+        </select>
+    </div>
+
+    <!-- PROPRIETÀ FABBRICATO -->
+    <div>
+        <label>Fabbricato principale</label>
+        <select id="fabbricatoProprieta">
+            <option value="">Seleziona.</option>
+            <option value="proprieta">Di proprietà dell’azienda</option>
+            <option value="affitto">In locazione</option>
+            <option value="uso_promiscuo">Uso promiscuo (es. abitazione + attività)</option>
+            <option value="altro">Altro / Non applicabile</option>
+        </select>
+    </div>
+
+    <!-- VALORE INDICATIVO BENI / CONTENUTO -->
+    <div>
+        <label>Valore indicativo beni / contenuto (Euro)</label>
+        <input type="text" id="valoreBeni" placeholder="Es: 500.000" />
+    </div>
+</div>
+
+<div style="margin-top:12px;">
+    <label>Polizze attualmente in essere (multi-selezione)</label>
+
+    <div id="polizzeContainer" 
+         style="display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:10px; margin-top:10px;">
+ <div class="polizza-card">
+            <input type="checkbox" class="chk-polizza" value="incendio">
+            Incendio / Fabbricato / Property
+        </div>
+
+        <div class="polizza-card">
+            <input type="checkbox" class="chk-polizza" value="rcg">
+            RCT / RCO
+        </div>
+
+        <div class="polizza-card">
+            <input type="checkbox" class="chk-polizza" value="infortuni_titolare">
+            Infortuni Titolare / Soci
+        </div>
+
+        <div class="polizza-card">
+            <input type="checkbox" class="chk-polizza" value="keyman">
+            Key Man / Uomo chiave
+        </div>
+
+        <div class="polizza-card">
+            <input type="checkbox" class="chk-polizza" value="vita_tcm">
+            Vita / TCM soci / garanti
+        </div>
+
+        <div class="polizza-card">
+            <input type="checkbox" class="chk-polizza" value="sanitaria">
+            Sanitaria / Welfare dipendenti
+        </div>
+
+        <div class="polizza-card">
+            <input type="checkbox" class="chk-polizza" value="cyber">
+            Cyber Risk
+        </div>
+
+        <div class="polizza-card">
+            <input type="checkbox" class="chk-polizza" value="tutela_legale">
+            Tutela Legale
+        </div>
+
+        <div class="polizza-card">
+            <input type="checkbox" class="chk-polizza" value="trasporti">
+            Merci trasportate / Trasporti
+        </div>
+
+        <div class="polizza-card">
+            <input type="checkbox" class="chk-polizza" value="credito">
+            Credito commerciale
+        </div>
+
+    </div>
+</div>
+
+            <div style="margin-top:18px; text-align:right;">
+                <button class="btn" onclick="generaQuestionarioPremium()">
+                    Avanti » Genera questionario
+                </button>
+            </div>
+        </div>
+
+        <!-- ===========================
+             QUESTIONARIO ADATTIVO
+        ============================ -->
+        <div class="section-card" id="questionarioSection" style="display:none;">
+            <h2>
+                Questionario Adattivo
+                <span class="pill-badge">Step 2</span>
+            </h2>
+
+            <div id="progressCounter" style="display:none;">
+                Risposte: <span class="numero">0</span> / <span class="totale">0</span>
+            </div>
+
+            <p style="margin-top:0; color:#4b5563;">
+                Rispondi alle domande cliccando sulle opzioni.  
+                Il sistema seleziona automaticamente fino a
+                <strong>18 domande rilevanti</strong>
+                sulla base del profilo aziendale.
+            </p>
+
+            <div id="questionarioContainer" style="margin-top:20px;"></div>
+
+            <div style="text-align:center; margin-top:25px;">
+                <button class="btn" onclick="generaReportPremium()" style="font-size:17px; padding:14px 26px;">
+                    Completa e Genera Report
+                </button>
+            </div>
+        </div>
+
+        <!-- ===========================
+             REPORT PREMIUM
+        ============================ -->
+        <div class="section-card" id="reportPremium" style="display:none;">
+            <h2>
+                Report Finale
+                <span class="pill-badge">Step 3</span>
+            </h2>
+
+            <!-- HEADER REPORT -->
+            <div style="padding:10px 0 5px 0;">
+                <h3 style="margin:0; font-size:22px;">Analisi della Protezione Aziendale</h3>
+                <p id="reportHeaderText" style="margin:4px 0 0 0; color:#555;"></p>
+            </div>
+
+            <hr style="margin:18px 0; border:0; border-top:1px solid #DDD;">
+
+            <!-- SEZIONE 1: Indice Globale -->
+            <div id="reportIndiceGlobale" style="margin-bottom:30px;">
+                <h3>Indice Globale di Protezione</h3>
+                <div id="indiceGlobaleValue"
+                     style="font-size:42px; font-weight:bold; color:#b91c1c;">
+                    --
+                </div>
+                <p style="color:#555;">Valore medio ponderato su scala 1–5</p>
+    <p id="indiceSoliditaText" style="margin-top:8px; color:#111827; font-size:15px;">
+        <!-- Verrà valorizzato via JS -->
+    </p>
+          </div>
+
+            <hr style="margin:26px 0; border-top:1px solid #DDD;">
+
+            <!-- SEZIONE 2: Domande analizzate -->
+            <div id="reportDomandeAnalizzate" style="margin-bottom:26px;">
+                <h3>Domande Analizzate</h3>
+                <div id="reportDomandeValue"
+                     style="font-size:26px; font-weight:bold; color:#333;">
+                    --
+                </div>
+                <p style="color:#555;">Numero totale di domande su cui si basa l’analisi</p>
+            </div>
+
+            <hr style="margin:26px 0; border-top:1px solid #DDD;">
+
+            <!-- SEZIONE 3: Punteggi per Area -->
+            <div id="reportAree">
+                <h3>Punteggi per Area</h3>
+                <div id="areaScoresContainer"
+                     style="display:flex; flex-wrap:wrap; gap:16px; margin-top:15px;">
+                    <!-- Riempiamo via JS -->
+                </div>
+<!-- Grafico Radar -->
+                <div style="max-width:600px; margin:25px auto 0 auto;">
+                    <canvas id="areaRadarChart"></canvas>
+                </div>
+            </div>
+
+            <hr style="margin:26px 0; border-top:1px solid #DDD;">
+
+            <!-- SEZIONE 4: Normotipo -->
+            <div id="normotipoSection">
+                <h3>Profilo Aziendale (Normotipo)</h3>
+                <div id="normotipoBox"
+                     style="margin-top:12px; background:#F6F6F6; padding:20px; border-radius:10px;">
+                    <!-- Riempiamo via JS -->
+                </div>
+            </div>
+
+            <hr style="margin:26px 0; border-top:1px solid #DDD;">
+
+            <!-- SEZIONE 5: Priorità Assicurative -->
+            <div id="prioritaSection">
+                <h3>Priorità Assicurative</h3>
+                <div id="prioritaContainer"
+                     style="display:flex; flex-direction:column; gap:10px; margin-top:15px;">
+                    <!-- Riempiamo via JS -->
+                </div>
+            </div>
+
+            <hr style="margin:26px 0; border-top:1px solid #DDD;">
+
+            <!-- SEZIONE 6: Gap Analysis -->
+            <div id="gapSection">
+                <h3>Gap Analysis</h3>
+                <div id="gapContainer"
+                     style="display:flex; flex-direction:column; gap:10px; margin-top:15px;">
+                    <!-- Riempiamo via JS -->
+                </div>
+            </div>
+
+            <hr style="margin:26px 0; border-top:1px solid #DDD;">
+
+            <!-- SEZIONE 7: Bias Cognitivi -->
+            <div id="biasSection">
+                <h3>Bias Cognitivi Rilevati</h3>
+                <div id="biasContainer"
+                     style="display:flex; flex-direction:column; gap:10px; margin-top:15px;">
+                    <!-- Riempiamo via JS -->
+                </div>
+            </div>
+
+            <hr style="margin:26px 0; border-top:1px solid #DDD;">
+
+            <!-- SEZIONE 8: Scenari What-If -->
+            <div id="whatIfSection">
+                <h3>Scenari What-If</h3>
+                <div id="whatIfContainer"
+                     style="display:flex; flex-direction:column; gap:14px; margin-top:15px;">
+                    <!-- Riempiamo via JS -->
+                </div>
+            </div>
+
+            <hr style="margin:26px 0; border-top:1px solid #DDD;">
+
+            <!-- SEZIONE 9: Benchmark -->
+            <div id="benchmarkSection">
+                <h3>Benchmark Settoriale</h3>
+                <div id="benchmarkContainer" style="margin-top:15px;">
+                </div>
+                <hr style="margin:26px 0; border-top:1px solid #DDD;">
+
+           <!--     SEZIONE INCONGRUENZE   -->
+
+           <div id="incongruenzeSection">
+               <h3>Incongruenze rilevate</h3>
+               <div id="incongruenzeContainer"
+                    style="display:flex; flex-direction:column; gap:12px; margin-top:15px;">
+               </div>
+           </div>
+
+           <!-- SEZIONE 10: PRIORITÀ SULLE COPERTURE ASSICURATIVE -->
+           <div id="reportPrioritaProdotti" style="margin-top:26px;">
+               <h3>Priorità sulle coperture assicurative</h3>
+               <p style="margin:6px 0 10px 0; color:#4B5563; font-size:14px;">
+                   Ordinamento delle principali coperture in funzione del profilo di rischio emerso
+                   (dimensione, settore, governance, people, continuità operativa, cyber).
+               </p>
+
+               <div id="prioritaProdottiList"
+                    style="display:flex; flex-direction:column; gap:10px; margin-top:8px;">
+                   <!-- Verrà popolato via JavaScript -->
+               </div>
+           </div>
+
+           <hr style="margin:26px 0; border-top:1px solid #DDD;">
+
+           <!-- SEZIONE 11: RACCOMANDAZIONE E PRIORITÀ ASSICURATIVA -->
+           <div id="raccomandazioneSection">
+               <h3>Raccomandazione Assicurativa</h3>
+
+               <!-- PRIORITÀ ASSICURATIVA (TESTO) -->
+               <div id="prioritaAssBox" style="margin-bottom:14px;"></div>
+
+               <!-- BARRA DI PRIORITÀ ASSICURATIVA -->
+               <div id="prioritaAssBar" style="margin-bottom:20px;"></div>
+
+               <!-- TESTO DELLA RACCOMANDAZIONE -->
+               <div id="raccomandazioneBox"
+                    style="margin-top:12px; background:#F6F6F6; padding:20px; border-radius:10px;">
+                   <!-- Viene popolato via JavaScript -->
+               </div>
+           </div>
+
+
+    <!-- PRIORITÀ ASSICURATIVA (TESTO) -->
+    <div id="prioritaAssBox" style="margin-bottom:14px;"></div>
+
+    <!-- BARRA DI PRIORITÀ ASSICURATIVA -->
+    <div id="prioritaAssBar" style="margin-bottom:20px;"></div>
+
+    <!-- TESTO DELLA RACCOMANDAZIONE -->
+    <div id="raccomandazioneBox"
+         style="margin-top:12px; background:#F6F6F6; padding:20px; border-radius:10px;">
+        <!-- Viene popolato via JavaScript -->
+    </div>
+</div>
+
+            <hr style="margin:26px 0; border-top:1px solid #DDD;">
+
+            <!-- SEZIONE 10: Export -->
+            <div style="margin-top:18px; display:flex; gap:8px; flex-wrap:wrap;">
+                <button class="btn" onclick="exportCSV()">Esporta CSV</button>
+                <button class="btn" onclick="exportXLSX()">Esporta XLSX</button>
+                <button class="btn" onclick="stampaReport()">Stampa</button>
+            </div>
+
+        </div> <!-- fine reportPremium -->
+
+    </div> <!-- fine container -->
+</div> <!-- fine mainContainer -->
+
+<!-- TEMPLATE DOMANDA PREMIUM (clonato da JS) -->
+<div id="domandaPremiumTemplate" style="display:none;">
+    <div class="domanda-block">
+        <div class="domanda-titolo">Titolo domanda</div>
+        <div class="domanda-sub">Descrizione opzionale</div>
+
+        <div class="risposta-box">
+            <div class="risposta-option" data-value="1"></div>
+            <div class="risposta-option" data-value="2"></div>
+            <div class="risposta-option" data-value="3"></div>
+            <div class="risposta-option" data-value="4"></div>
+            <div class="risposta-option" data-value="5"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ======================================
+     SCRIPT APPLICAZIONE
+====================================== -->
+<script>
+/* ============================================================
+   HELPERS GENERALI
+============================================================ */
+
+function mostraToast(messaggio, tipo = "info") {
+    const container = document.getElementById("toastContainer");
+    const t = document.createElement("div");
+    t.className = "toast";
+
+    if (tipo === "error") t.classList.add("toast-error");
+    if (tipo === "success") t.classList.add("toast-success");
+
+    t.textContent = messaggio;
+    container.appendChild(t);
+
+    requestAnimationFrame(() => t.classList.add("show"));
+
+    setTimeout(() => {
+        t.classList.remove("show");
+        setTimeout(() => container.removeChild(t), 200);
+    }, 2600);
+}
+
+function formattaNumero(n) {
+    if (isNaN(n)) return "--";
+    return n.toFixed(2).replace(".", ",");
+}
+/* ============================================================
+   LOADING SPINNER
+============================================================ */
+
+function mostraLoader(testo = "Elaborazione in corso...") {
+    const overlay = document.getElementById("loadingOverlay");
+    const textEl = document.getElementById("loadingText");
+    
+    if (textEl) textEl.textContent = testo;
+    if (overlay) overlay.classList.add("show");
+}
+
+function nascondiLoader() {
+    const overlay = document.getElementById("loadingOverlay");
+    if (overlay) overlay.classList.remove("show");
+}
+/* ============================================================
+   VALIDAZIONE PARTITA IVA ITALIANA
+============================================================ */
+
+function validaPartitaIVA(piva) {
+    // Rimuovi spazi e caratteri non numerici
+    piva = piva.replace(/\s/g, "");
+    
+    // Deve essere esattamente 11 cifre numeriche
+    if (!/^\d{11}$/.test(piva)) {
+        return false;
+    }
+    
+    // Algoritmo di validazione P.IVA italiana
+    let s = 0;
+    for (let i = 0; i < 11; i++) {
+        let n = parseInt(piva.charAt(i), 10);
+        if ((i % 2) === 1) {
+            n *= 2;
+            if (n > 9) n -= 9;
+        }
+        s += n;
+    }
+    
+    return (s % 10) === 0;
+}
+
+function aggiornaValidazionePIVA() {
+    const input = document.getElementById("partitaIVA");
+    const status = document.getElementById("pivaStatus");
+    const valore = input.value.trim();
+    
+    // Reset se vuoto
+    if (valore === "") {
+        status.textContent = "";
+        status.className = "";
+        input.classList.remove("input-valid", "input-invalid");
+        return;
+    }
+    
+    // Validazione
+    if (validaPartitaIVA(valore)) {
+        status.textContent = "✓ Partita IVA valida";
+        status.className = "valid";
+        input.classList.remove("input-invalid");
+        input.classList.add("input-valid");
+    } else {
+        status.textContent = "✗ Partita IVA non valida";
+        status.className = "invalid";
+        input.classList.remove("input-valid");
+        input.classList.add("input-invalid");
+    }
+}
+
+// Blocca caratteri non numerici durante la digitazione
+function soloNumeriPIVA(event) {
+    const char = String.fromCharCode(event.which || event.keyCode);
+    if (!/^\d$/.test(char) && event.keyCode !== 8 && event.keyCode !== 46) {
+        event.preventDefault();
+    }
+}
+/* ============================================================
+   GESTIONE CAMPI "ALTRO"
+============================================================ */
+
+function gestisciCampoAltro(selectId, campoAltroId) {
+    const selectEl = document.getElementById(selectId);
+    const campoAltro = document.getElementById(campoAltroId);
+    
+    if (!selectEl || !campoAltro) return;
+    
+    selectEl.addEventListener("change", function() {
+        if (this.value === "altro") {
+            campoAltro.classList.add("show");
+            campoAltro.focus();
+        } else {
+            campoAltro.classList.remove("show");
+            campoAltro.value = "";
+        }
+    });
+}
+/* ============================================================
+   FORMATTAZIONE FATTURATO
+============================================================ */
+
+function formattaFatturato(valore) {
+    // Rimuovi tutto tranne i numeri
+    const solo_numeri = valore.replace(/[^\d]/g, "");
+    
+    if (!solo_numeri) return "";
+    
+    // Converti in numero
+    const numero = parseInt(solo_numeri, 10);
+    
+    // Formatta con separatore migliaia (punto) e decimali (virgola)
+    const formattato = new Intl.NumberFormat("it-IT", {
+        style: "currency",
+        currency: "EUR",
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+    }).format(numero);
+    
+    return formattato;
+}
+
+function gestisciFatturatoInput() {
+    const input = document.getElementById("fatturato");
+    
+    input.addEventListener("input", function(e) {
+        const cursorPos = this.selectionStart;
+        const valorePrecedente = this.value;
+        
+        // Salva solo i numeri
+        const numeriPrecedenti = valorePrecedente.replace(/[^\d]/g, "").length;
+        
+        // Formatta
+        const formattato = formattaFatturato(this.value);
+        this.value = formattato;
+        
+        // Ripristina cursore alla fine
+        const numeriNuovi = formattato.replace(/[^\d]/g, "").length;
+        
+        // Se l'utente sta digitando, metti il cursore alla fine
+        if (numeriNuovi >= numeriPrecedenti) {
+            this.selectionStart = this.selectionEnd = formattato.length;
+        }
+    });
+    
+    // Gestisci anche il paste
+    input.addEventListener("paste", function(e) {
+        setTimeout(() => {
+            const formattato = formattaFatturato(this.value);
+            this.value = formattato;
+        }, 10);
+    });
+}
+
+function estraiFatturatoNumerico() {
+    const input = document.getElementById("fatturato");
+    const valore = input.value.replace(/[^\d]/g, "");
+    return valore ? parseInt(valore, 10) : 0;
+}
+/* ============================================================
+   VALIDAZIONE FORM ANAGRAFICA
+============================================================ */
+
+function validaEmail(email) {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email);
+}
+
+function validaTelefonoItaliano(telefono) {
+    // Rimuovi spazi, trattini, parentesi
+    const pulito = telefono.replace(/[\s\-\(\)]/g, "");
+    
+    // Formati accettati:
+    // +393xxxxxxxxx (cellulare con prefisso internazionale)
+    // 3xxxxxxxxx (cellulare)
+    // +390xxxxxxxxx (fisso con prefisso internazionale)
+    // 0xxxxxxxxx (fisso)
+    
+    const regex = /^(\+39)?[0-9]{9,11}$/;
+    return regex.test(pulito);
+}
+
+function validaCAP(cap) {
+    // CAP italiano: esattamente 5 cifre
+    const regex = /^[0-9]{5}$/;
+    return regex.test(cap.trim());
+}
+
+/* ============================================================
+   CONTATORE PROGRESSO QUESTIONARIO
+============================================================ */
+/* ============================================================
+   ARCHIVIO ANALISI (localStorage)
+============================================================ */
+
+// Salva un'analisi completata nell'archivio
+function salvaAnalisiArchivio(reportData) {
+    if (!reportData || !reportData.azienda) return false;
+    
+    // Crea oggetto analisi completo
+    const analisi = {
+        id: Date.now().toString(), // ID univoco basato su timestamp
+        dataCreazione: new Date().toISOString(),
+        azienda: reportData.azienda,
+        indiceGlobale: reportData.indiceGlobale,
+        risposte: reportData.risposte,
+        areePunteggio: reportData.areePunteggio,
+        consulente: reportData.azienda.consulente || "n.d.",
+        emailConsulente: reportData.azienda.emailConsulente || ""
+    };
+    
+    // Recupera archivio esistente
+    let archivio = [];
+    const stored = localStorage.getItem("generali_archivio_analisi");
+    if (stored) {
+        try {
+            archivio = JSON.parse(stored);
+        } catch (e) {
+            console.error("Errore lettura archivio:", e);
+            archivio = [];
+        }
+    }
+    
+    // Aggiungi nuova analisi in testa
+    archivio.unshift(analisi);
+    
+    // Mantieni solo le ultime 300 analisi (limite localStorage)
+    if (archivio.length > 300) {
+        archivio = archivio.slice(0, 300);
+    }
+    
+    // Salva archivio aggiornato
+    try {
+        localStorage.setItem("generali_archivio_analisi", JSON.stringify(archivio));
+        return true;
+    } catch (e) {
+        console.error("Errore salvataggio archivio:", e);
+        mostraToast("Archivio pieno. Esporta e svuota per continuare.", "error");
+        return false;
+    }
+}
+
+// Recupera tutte le analisi dall'archivio
+function caricaArchivioAnalisi() {
+    const stored = localStorage.getItem("generali_archivio_analisi");
+    if (!stored) return [];
+    
+    try {
+        return JSON.parse(stored);
+    } catch (e) {
+        console.error("Errore caricamento archivio:", e);
+        return [];
+    }
+}
+
+// Cerca analisi per P.IVA
+function cercaAnalisiPerPIVA(piva) {
+    const archivio = caricaArchivioAnalisi();
+    return archivio.filter(a => a.azienda.partitaIVA === piva);
+}
+
+// Recupera singola analisi per ID
+function recuperaAnalisi(id) {
+    const archivio = caricaArchivioAnalisi();
+    return archivio.find(a => a.id === id);
+}
+
+// Cancella archivio completo (con conferma)
+function svuotaArchivio() {
+    if (confirm("⚠️ ATTENZIONE: Vuoi davvero cancellare TUTTE le analisi salvate?\n\nQuesta operazione è irreversibile!\n\nSi consiglia di esportare prima un backup.")) {
+        localStorage.removeItem("generali_archivio_analisi");
+        mostraToast("Archivio svuotato.", "success");
+        return true;
+    }
+    return false;
+}
+// Cerca analisi per P.IVA e mostra risultati
+function cercaInArchivio() {
+    const piva = document.getElementById("searchPIVA").value.trim();
+    
+    if (!piva) {
+        mostraToast("Inserisci una P.IVA per cercare.", "error");
+        return;
+    }
+    
+    const risultati = cercaAnalisiPerPIVA(piva);
+    mostraRisultatiArchivio(risultati, `Risultati per P.IVA: ${piva}`);
+}
+
+// Mostra tutto l'archivio
+function mostraArchivioCompleto() {
+    const archivio = caricaArchivioAnalisi();
+    mostraRisultatiArchivio(archivio, "Tutte le Analisi");
+}
+
+// Visualizza risultati ricerca
+function mostraRisultatiArchivio(analisi, titolo) {
+    const container = document.getElementById("archivioRisultati");
+    
+    if (!analisi || analisi.length === 0) {
+        container.innerHTML = `<p style="color:#6b7280;">Nessuna analisi trovata.</p>`;
+        return;
+    }
+    
+    let html = `<h4 style="margin:0 0 12px 0; font-size:16px;">${titolo} (${analisi.length})</h4>`;
+    html += `<div style="display:flex; flex-direction:column; gap:10px;">`;
+    
+    analisi.forEach(a => {
+        const data = new Date(a.dataCreazione).toLocaleDateString("it-IT", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit"
+        });
+        
+        const indice = formattaNumero(a.indiceGlobale);
+        const ragSoc = a.azienda.ragioneSociale || "N.D.";
+        const piva = a.azienda.partitaIVA || "N.D.";
+        const settore = a.azienda.settore || "N.D.";
+        
+        html += `
+            <div style="padding:12px; border:1px solid #e5e7eb; border-radius:8px; background:#fafafa;">
+                <div style="display:flex; justify-content:space-between; align-items:start; gap:10px; flex-wrap:wrap;">
+                    <div style="flex:1; min-width:200px;">
+                        <div style="font-weight:600; font-size:15px; margin-bottom:4px;">
+                            ${ragSoc}
+                        </div>
+                        <div style="font-size:13px; color:#6b7280;">
+                            P.IVA: ${piva} | Settore: ${settore}
+                        </div>
+                        <div style="font-size:12px; color:#9ca3af; margin-top:4px;">
+                            📅 ${data} | Consulente: ${a.consulente || "N.D."}
+                        </div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-size:13px; color:#6b7280; margin-bottom:4px;">
+                            Indice Globale
+                        </div>
+                        <div style="font-size:22px; font-weight:700; color:#b91c1c;">
+                            ${indice}
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-top:10px; display:flex; gap:6px;">
+                    <button class="btn" onclick="caricaAnalisiPrecedente('${a.id}')" 
+                            style="font-size:13px; padding:6px 12px;">
+                        📂 Carica
+                    </button>
+                    <button class="btn" onclick="confrontaAnalisi('${piva}')" 
+                            style="font-size:13px; padding:6px 12px; background:#15803d;">
+                        📊 Confronta
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += `</div>`;
+    container.innerHTML = html;
+}
+
+// Carica analisi precedente
+function caricaAnalisiPrecedente(id) {
+    const analisi = recuperaAnalisi(id);
+    
+    if (!analisi) {
+        mostraToast("Analisi non trovata.", "error");
+        return;
+    }
+    
+    // Ricarica dati anagrafica
+    const a = analisi.azienda;
+    document.getElementById("ragioneSociale").value = a.ragioneSociale || "";
+    document.getElementById("partitaIVA").value = a.partitaIVA || "";
+    document.getElementById("settore").value = a.settore || "";
+    document.getElementById("formaGiuridica").value = a.formaGiuridica || "";
+    document.getElementById("dipendenti").value = a.dipendenti || "";
+    document.getElementById("interlocutore").value = a.interlocutore || "";
+    document.getElementById("fatturato").value = a.fatturato || "";
+    document.getElementById("provincia").value = a.provincia || "";
+    document.getElementById("citta").value = a.citta || "";
+    document.getElementById("cap").value = a.cap || "";
+    document.getElementById("emailAzienda").value = a.emailAzienda || "";
+    document.getElementById("telefonoAzienda").value = a.telefonoAzienda || "";
+    
+    // Ricarica report
+    window.REPORT_DATA = {
+        azienda: analisi.azienda,
+        indiceGlobale: analisi.indiceGlobale,
+        risposte: analisi.risposte,
+        areePunteggio: analisi.areePunteggio,
+        generatoIl: analisi.dataCreazione
+    };
+    
+    popolaReport(window.REPORT_DATA);
+    
+    mostraToast("Analisi caricata.", "success");
+}
+
+// Confronta analisi (placeholder per futura implementazione)
+function confrontaAnalisi(piva) {
+    const analisiCliente = cercaAnalisiPerPIVA(piva);
+    
+    if (analisiCliente.length < 2) {
+        mostraToast("Servono almeno 2 analisi dello stesso cliente per il confronto.", "error");
+        return;
+    }
+    
+    mostraToast("Funzione confronto in sviluppo. Cliente ha " + analisiCliente.length + " analisi.", "info");
+}
+
+// Svuota archivio con conferma
+function svuotaArchivioConferma() {
+    svuotaArchivio();
+    document.getElementById("archivioRisultati").innerHTML = `
+        <p style="color:#6b7280; font-size:14px;">
+            Archivio svuotato. Le nuove analisi verranno salvate qui.
+        </p>
+    `;
+}
+// Aggiorna contatore analisi nel badge
+function aggiornaContatorArchivio() {
+    const archivio = caricaArchivioAnalisi();
+    const container = document.getElementById("archivioRisultati");
+    
+    if (archivio.length > 0) {
+        const badge = document.querySelector('.section-card h2 .pill-badge');
+        if (badge && badge.textContent === "Storico") {
+            badge.textContent = `${archivio.length} Salvate`;
+        }
+        
+        container.innerHTML = `
+            <p style="color:#15803d; font-weight:600; font-size:14px;">
+                ✅ ${archivio.length} analisi disponibili nell'archivio
+            </p>
+            <p style="color:#6b7280; font-size:13px; margin-top:6px;">
+                Usa la ricerca per P.IVA o clicca "Mostra Tutte" per visualizzare lo storico.
+            </p>
+        `;
+    }
+}
+// Esporta archivio completo in JSON
+function esportaArchivioJSON() {
+    const archivio = caricaArchivioAnalisi();
+    
+    if (archivio.length === 0) {
+        mostraToast("Archivio vuoto, nessun dato da esportare.", "error");
+        return;
+    }
+    
+    const dataExport = {
+        esportato: new Date().toISOString(),
+        totaleAnalisi: archivio.length,
+        versione: "1.0",
+        analisi: archivio
+    };
+    
+    const json = JSON.stringify(dataExport, null, 2);
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    
+    const dataFile = new Date().toISOString().split("T")[0];
+    a.href = url;
+    a.download = `archivio_generali_${dataFile}_${archivio.length}_analisi.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    mostraToast(`Backup esportato: ${archivio.length} analisi.`, "success");
+}
+function aggiornaProgressoQuestionario() {
+    const blocks = document.querySelectorAll("#questionarioContainer .domanda-block");
+    const totale = blocks.length;
+    let risposte = 0;
+    
+    blocks.forEach(block => {
+        if (block.getAttribute("data-answer")) {
+            risposte++;
+        }
+    });
+    
+    const counter = document.getElementById("progressCounter");
+    if (counter) {
+        counter.querySelector(".numero").textContent = risposte;
+        counter.querySelector(".totale").textContent = totale;
+        counter.style.display = "inline-block";
+    }
+}
+/* ============================================================
+   VALIDAZIONE RISPOSTE QUESTIONARIO
+============================================================ */
+
+function validaRisposteComplete() {
+    const blocks = document.querySelectorAll("#questionarioContainer .domanda-block");
+    const totale = blocks.length;
+    
+    if (totale === 0) {
+        mostraToast("Prima genera il questionario.", "error");
+        return false;
+    }
+    
+    let risposte = 0;
+    const domandeNonRisposte = [];
+    
+    blocks.forEach((block, idx) => {
+        const answer = block.getAttribute("data-answer");
+        if (answer) {
+            risposte++;
+        } else {
+            domandeNonRisposte.push(idx + 1);
+        }
+    });
+    
+    if (risposte === 0) {
+        mostraToast("Rispondi ad almeno una domanda per generare il report.", "error");
+        return false;
+    }
+    
+    // Avviso se mancano risposte (non blocca, ma informa)
+    if (domandeNonRisposte.length > 0) {
+        const mancanti = domandeNonRisposte.length;
+        const perc = Math.round((risposte / totale) * 100);
+        mostraToast(`Completamento: ${perc}% (${risposte}/${totale} domande). Mancano: ${mancanti}`, "error");
+        
+        // Permetti di proseguire se almeno il 50% è completato
+        if (perc < 50) {
+            return false;
+        }
+    }
+    
+    return true;
+}
+function validaFormAnagrafica() {
+    const campiObbligatori = [
+        { id: "ragioneSociale", label: "Ragione Sociale" },
+        { id: "partitaIVA", label: "Partita IVA" },
+        { id: "settore", label: "Settore" },
+        { id: "formaGiuridica", label: "Forma Giuridica" },
+        { id: "dipendenti", label: "Numero Dipendenti" }
+    ];
+    
+    const campiMancanti = [];
+    
+    campiObbligatori.forEach(campo => {
+        const el = document.getElementById(campo.id);
+        const valore = el.value.trim();
+        
+        if (!valore) {
+            campiMancanti.push(campo.label);
+            el.style.borderColor = "#b91c1c";
+            el.style.backgroundColor = "#fef2f2";
+        } else {
+            el.style.borderColor = "";
+            el.style.backgroundColor = "";
+        }
+    });
+    
+    // Validazione speciale P.IVA
+    const piva = document.getElementById("partitaIVA").value.trim();
+    if (piva && !validaPartitaIVA(piva)) {
+        if (!campiMancanti.includes("Partita IVA")) {
+            campiMancanti.push("Partita IVA (non valida)");
+        }
+    }
+    
+    // Validazione EMAIL (se compilata)
+    const email = document.getElementById("emailAzienda").value.trim();
+    if (email && !validaEmail(email)) {
+        campiMancanti.push("Email aziendale (formato non valido)");
+        document.getElementById("emailAzienda").style.borderColor = "#b91c1c";
+        document.getElementById("emailAzienda").style.backgroundColor = "#fef2f2";
+    }
+    
+    // Validazione TELEFONO (se compilato)
+    const telefono = document.getElementById("telefonoAzienda").value.trim();
+    if (telefono && !validaTelefonoItaliano(telefono)) {
+        campiMancanti.push("Telefono (formato non valido)");
+        document.getElementById("telefonoAzienda").style.borderColor = "#b91c1c";
+        document.getElementById("telefonoAzienda").style.backgroundColor = "#fef2f2";
+    }
+    
+    // Validazione CAP (se compilato)
+    const cap = document.getElementById("cap").value.trim();
+    if (cap && !validaCAP(cap)) {
+        campiMancanti.push("CAP (deve essere 5 cifre)");
+        document.getElementById("cap").style.borderColor = "#b91c1c";
+        document.getElementById("cap").style.backgroundColor = "#fef2f2";
+    }
+    
+    if (campiMancanti.length > 0) {
+        mostraToast("Campi non validi: " + campiMancanti.join(", "), "error");
+        return false;
+    }
+    
+    return true;
+}
+
+/* ============================================================
+   LOGIN SEMPLIFICATO
+============================================================ */
+
+function eseguiLogin() {
+    const user = document.getElementById("loginUser").value.trim();
+    const pass = document.getElementById("loginPass").value.trim();
+
+    // Validazione campi vuoti
+    if (!user || !pass) {
+        mostraToast("Inserisci nome/cognome e password.", "error");
+        return;
+    }
+
+    // Validazione password unica
+    if (pass !== "Generali2026!") {
+        mostraToast("Password non corretta.", "error");
+        return;
+    }
+
+    // Verifica database consulenti caricato
+    if (!window.CONSULENTI_GENERALI || !window.trovaConsulente) {
+        mostraToast("Errore: database consulenti non caricato.", "error");
+        console.error("CONSULENTI_GENERALI o trovaConsulente non disponibili");
+        return;
+    }
+
+    // Cerca consulente nel database
+    const consulente = window.trovaConsulente(user);
+
+    if (!consulente) {
+        mostraToast("Consulente non trovato. Verifica nome e cognome.", "error");
+        return;
+    }
+
+    // Accesso consentito
+    document.getElementById("loginOverlay").style.display = "none";
+    document.getElementById("mainContainer").style.display = "block";
+
+    // Precompila dati consulente autenticato
+    const nomeCompleto = `${consulente.nome} ${consulente.cognome}`;
+    document.getElementById("consulenteNome").value = nomeCompleto;
+    document.getElementById("consulenteEmail").value = consulente.email;
+
+    // ✅ Sessione unica condivisa
+if (window.GBA_SESSION && typeof window.GBA_SESSION.set === "function") {
+  window.GBA_SESSION.set({
+    userId: nomeCompleto.toUpperCase().replace(/\s+/g, " ").trim(),
+    displayName: nomeCompleto,
+    role: (consulente.ruolo || "CONSULENTE")
+  });
+} else {
+  console.error("GBA_SESSION non disponibile: session_global.js non caricato");
+}
+
+
+    mostraToast(`Benvenuto ${nomeCompleto} - ${consulente.ruolo}`, "success");
+    console.log(`✅ Login effettuato: ${nomeCompleto} (${consulente.ruolo})`);
+}
+
+/* ============================================================
+   GESTIONE RISPOSTE (pillole)
+============================================================ */
+
+function attachPremiumHandlers(domandaContainer) {
+    const options = domandaContainer.querySelectorAll(".risposta-option");
+
+    options.forEach(opt => {
+        opt.addEventListener("click", () => {
+            options.forEach(o => o.classList.remove("selected"));
+            opt.classList.add("selected");
+            domandaContainer.setAttribute("data-answer", opt.dataset.value);
+            
+            // Aggiorna counter progresso
+            aggiornaProgressoQuestionario();
+        });
+    });
+}
+
+/* ============================================================
+   ENGINE 1 — GENERAZIONE QUESTIONARIO
+   Usa DOMANDE_FULL (file domande_full.js)
+============================================================ */
+
+window.QUESTIONARIO_CORRENTE = [];
+window.REPORT_DATA = null;
+
+// =======================================================
+// UTILITY: matching avanzato tra filtri.settore e settore selezionato
+// =======================================================
+function matchSettoreFiltro(filtroSettore, settoreSelezionato) {
+    if (!filtroSettore || !settoreSelezionato) {
+        return true;
+    }
+
+    const norm = (s) => (s || "").toString().trim().toLowerCase();
+
+    const filtroNorm = norm(filtroSettore);
+    const settoreNorm = norm(settoreSelezionato);
+
+    if (filtroNorm === "any" || filtroNorm === "tutti") {
+        return true;
+    }
+
+    const sinonimi = {
+        "industria": "industria",
+        "industriale": "industria",
+        "manifattura": "industria",
+        "manifatturiero": "industria",
+        "produzione": "industria",
+        "fabbricazione": "industria",
+        "industrie": "industria",
+
+        "artigianato": "artigianato",
+        "artigianale": "artigianato",
+
+        "commercio": "commercio",
+        "retail": "commercio",
+        "vendita": "commercio",
+
+        "servizi": "servizi",
+        "servizio": "servizi",
+        "sanità": "servizi",
+        "pubblica_amministrazione": "servizi",
+
+        "logistica": "logistica",
+        "trasporti": "logistica",
+        "trasporto": "logistica",
+        "supply_chain": "logistica",
+
+        "tecnologia": "tecnologia",
+        "ict": "tecnologia",
+        "it": "tecnologia",
+        "software": "tecnologia",
+        "digitale": "tecnologia",
+
+        "agroalimentare": "agroalimentare",
+        "agro": "agroalimentare",
+        "agricolo": "agroalimentare",
+        "agricoltura": "agroalimentare",
+        "alimentare": "agroalimentare"
+    };
+
+    const canon = (s) => {
+        const k = norm(s);
+        return sinonimi[k] || k;
+    };
+
+    const tokens = filtroNorm.split("|").map(canon);
+    const settoreCanonico = canon(settoreNorm);
+
+    const setSettoriCanonici = new Set([
+        "industria",
+        "artigianato",
+        "commercio",
+        "servizi",
+        "logistica",
+        "tecnologia",
+        "agroalimentare"
+    ]);
+
+    const haSettoriNoti = tokens.some(t => setSettoriCanonici.has(t));
+    if (!haSettoriNoti) {
+        return true;
+    }
+
+    return tokens.includes(settoreCanonico);
+}
+
+// =======================================================
+// UTILITY: matching forma giuridica e dipendenti
+// =======================================================
+function matchFormaFiltro(filtroForma, formaCanonica) {
+    if (!filtroForma) return true;
+
+    const norm = (s) => (s || "").toString().trim().toLowerCase();
+    const filtro = norm(filtroForma);
+
+    if (filtro === "any") return true;
+
+    const tokens = filtro.split("|").map(t => norm(t));
+    const f = norm(formaCanonica || "");
+
+    if (tokens.includes("any")) return true;
+
+    return tokens.includes(f);
+}
+
+function matchMinimoDip(filtroMinimoDip, numeroDip) {
+    if (typeof filtroMinimoDip !== "number") return true;
+    const n = parseInt(numeroDip || 0, 10);
+    return n >= filtroMinimoDip;
+}
+
+// Costruisce un profilo azienda normalizzato, pronto per l'engine
+function costruisciProfiloAzienda() {
+    const a = raccogliDatiAzienda();
+
+    const norm = (s) => (s || "").toString().trim().toLowerCase();
+
+    let formaCanonica = norm(a.formaGiuridica);
+    if (formaCanonica === "ditta individuale" || formaCanonica === "ditta") formaCanonica = "ditta";
+    if (formaCanonica === "società a responsabilità limitata" || formaCanonica === "srl") formaCanonica = "srl";
+    if (formaCanonica === "società per azioni" || formaCanonica === "spa") formaCanonica = "spa";
+
+    let interlocutore = norm(a.interlocutore);
+
+    return {
+        raw: a,
+        settore: norm(a.settore),
+        forma: formaCanonica || "any",
+        dipendenti: a.dipendenti || 0,
+        fatturato: a.fatturato || 0,
+        provincia: norm(a.provincia),
+        interlocutore,
+        tipoStruttura: norm(a.tipoStruttura),
+        fabbricatoProprieta: norm(a.fabbricatoProprieta),
+        polizzeAttive: Array.isArray(a.polizzeAttive) ? a.polizzeAttive : []
+    };
+}
+
+function generaQuestionarioPremium() {
+    // 1) Valida form anagrafica prima di proseguire
+    if (!validaFormAnagrafica()) {
+        return;
+    }
+
+    mostraLoader("Generazione questionario adattivo...");
+
+    setTimeout(() => {
+        if (!window.DOMANDE_FULL || !Array.isArray(window.DOMANDE_FULL)) {
+            nascondiLoader();
+            mostraToast("Dataset domande non disponibile (DOMANDE_FULL).", "error");
+            return;
+        }
+
+        const profilo = costruisciProfiloAzienda();
+        const settoreCanonico = profilo.settore;   // "servizi", "industria", ...
+        const formaCanonica = profilo.forma;       // "ditta", "srl", "spa", ...
+        const numeroDip = profilo.dipendenti;      // numero dipendenti
+
+        const microServizi = (settoreCanonico === "servizi" && Number(numeroDip || 0) <= 3);
+
+        // 1) FILTRAGGIO BASE (settore / forma / dipendenti)
+        let candidate = DOMANDE_FULL.filter(d => {
+            const f = d.filtri || {};
+
+            if (f.settore && !matchSettoreFiltro(f.settore, settoreCanonico)) {
+                return false;
+            }
+
+            if (f.forma && !matchFormaFiltro(f.forma, formaCanonica)) {
+                return false;
+            }
+
+            if (!matchMinimoDip(f.minimoDip, numeroDip)) {
+                return false;
+            }
+
+            return true;
+        });
+
+        if (candidate.length < 18) {
+            console.warn("Poche domande candidate per questo profilo. Uso dataset completo come fallback.");
+            candidate = DOMANDE_FULL.slice();
+        }
+
+        // 2) ORDINAMENTO PER PESO (base)
+        candidate.sort((a, b) => (b.peso || 1) - (a.peso || 1));
+
+                // 3) LOGICA DI MIX AREE (evita 3 cyber in testa)
+        const isCyberLike = (q) => {
+            const area = (q.area || "").toLowerCase();
+            const testo = (q.testo || "").toLowerCase();
+            return (
+                area.includes("cyber") ||
+                area.includes("data protection") ||
+                area.includes("gdpr") ||
+                area.includes("it & digital risk") ||
+                area.includes("ai risk") ||
+                testo.includes("cyber")
+            );
+        };
+
+        const MAX_CYBER_MICRO = 3;
+        const MAX_CYBER_STANDARD = 8;
+        const maxCyber = microServizi ? MAX_CYBER_MICRO : MAX_CYBER_STANDARD;
+
+        const cyber = candidate.filter(isCyberLike);
+        const nonCyber = candidate.filter(q => !isCyberLike(q));
+
+        const cyberLimited = cyber.slice(0, maxCyber);
+
+        const selected = [];
+
+        if (microServizi) {
+            // MIX PER MICRO-SERVIZI:
+            // - prime 6 domande: max 1 cyber
+            // - totale: max 3 cyber
+            let iNon = 0;
+            let iCyber = 0;
+            let cyberUsed = 0;
+
+            while (selected.length < 24 && (iNon < nonCyber.length || iCyber < cyberLimited.length)) {
+                if (selected.length < 6) {
+                    // PRIME 6: priorità assoluta NON-CYBER
+                    if (iNon < nonCyber.length) {
+                        selected.push(nonCyber[iNon++]);
+                        continue;
+                    }
+                    // se proprio non ho non-cyber, uso 1 cyber massimo
+                    if (iCyber < cyberLimited.length && cyberUsed < 1) {
+                        selected.push(cyberLimited[iCyber++]);
+                        cyberUsed++;
+                        continue;
+                    }
+                    break;
+                } else {
+                    // DAL 7° IN POI: alterno non-cyber e cyber, entro il tetto
+                    if (iNon < nonCyber.length) {
+                        selected.push(nonCyber[iNon++]);
+                    }
+                    if (selected.length >= 24) break;
+
+                    if (iCyber < cyberLimited.length && cyberUsed < maxCyber) {
+                        selected.push(cyberLimited[iCyber++]);
+                        cyberUsed++;
+                    }
+                }
+            }
+
+            // Se ancora <24, riempio con non-cyber residui
+            while (selected.length < 24 && iNon < nonCyber.length) {
+                selected.push(nonCyber[iNon++]);
+            }
+
+        } else {
+            // NON MICRO: mantengo logica base con tetto cyber
+            let cyberCount = 0;
+            const usedIds = new Set();
+
+            for (const q of candidate) {
+                if (selected.length >= 24) break;
+                if (!q || !q.id) continue;
+
+                const isC = isCyberLike(q);
+                if (isC && cyberCount >= maxCyber) continue;
+
+                if (!usedIds.has(q.id)) {
+                    selected.push(q);
+                    usedIds.add(q.id);
+                    if (isC) cyberCount++;
+                }
+            }
+
+            // Top-up se <24 (senza violare tetto)
+            if (selected.length < 24) {
+                for (const q of candidate) {
+                    if (selected.length >= 24) break;
+                    if (!q || !q.id) continue;
+                    if (selected.find(x => x.id === q.id)) continue;
+
+                    const isC = isCyberLike(q);
+                    if (isC && selected.filter(isCyberLike).length >= maxCyber) continue;
+
+                    selected.push(q);
+                }
+            }
+        }
+
+        const container = document.getElementById("questionarioContainer");
+        container.innerHTML = "";
+
+        const template = document.getElementById("domandaPremiumTemplate");
+
+        selected.forEach((q, idx) => {
+            const node = template.firstElementChild.cloneNode(true);
+
+            node.dataset.qid = q.id;
+            node.dataset.area = q.area || "Generale";
+            node.dataset.peso = q.peso || 1.0;
+
+            const titoloEl = node.querySelector(".domanda-titolo");
+            const subEl = node.querySelector(".domanda-sub");
+            const optEls = node.querySelectorAll(".risposta-option");
+
+            titoloEl.textContent = (idx + 1) + ". " + (q.testo || "Domanda");
+
+            if (q.area) {
+                subEl.textContent = q.area;
+            } else {
+                subEl.textContent = "Area non specificata";
+            }
+
+            if (Array.isArray(q.opzioni)) {
+                q.opzioni.forEach((txt, i) => {
+                    if (optEls[i]) optEls[i].textContent = txt;
+                });
+            }
+
+            attachPremiumHandlers(node);
+            container.appendChild(node);
+        });
+
+        document.getElementById("questionarioSection").style.display = "block";
+        document.getElementById("questionarioSection").scrollIntoView({ behavior: "smooth" });
+
+        nascondiLoader();
+        mostraToast(
+            "Questionario generato (" + selected.length +
+            " domande, cyber limitato per micro-servizi).",
+            "success"
+        );
+    }, 300);
+}
+
+
+/* ============================================================
+   ENGINE 2 — CALCOLO PUNTEGGI E DATI REPORT
+============================================================ */
+
+function raccogliDatiAzienda() {
+    return {
+        ragioneSociale: document.getElementById("ragioneSociale").value || "",
+        partitaIVA: document.getElementById("partitaIVA").value || "",
+        settore: document.getElementById("settore").value || "",
+        formaGiuridica: document.getElementById("formaGiuridica").value || "",
+        dipendenti: parseInt(document.getElementById("dipendenti").value || "0", 10),
+        fatturato: estraiFatturatoNumerico() || 0,
+        provincia: document.getElementById("provincia").value || "",
+        citta: document.getElementById("citta").value || "",
+        cap: document.getElementById("cap").value || "",
+        interlocutore: document.getElementById("interlocutore").value || "",
+        emailAzienda: document.getElementById("emailAzienda").value || "",
+        telefonoAzienda: document.getElementById("telefonoAzienda").value || "",
+        consulente: document.getElementById("consulenteNome").value || "",
+        emailConsulente: document.getElementById("consulenteEmail").value || "",
+        // NUOVI CAMPI
+        tipoStruttura: document.getElementById("tipoStruttura") ? document.getElementById("tipoStruttura").value || "" : "",
+        fabbricatoProprieta: document.getElementById("fabbricatoProprieta") ? document.getElementById("fabbricatoProprieta").value || "" : "",
+        valoreBeni: (() => {
+            const raw = document.getElementById("valoreBeni") ? document.getElementById("valoreBeni").value : "";
+            const clean = (raw || "").replace(/[^\d]/g, "");
+            return clean ? parseInt(clean, 10) : 0;
+        })(),
+        polizzeAttive: raccogliPolizzeAttive()
+    };
+}
+
+function generaReportPremium() {
+    console.log("➡ Generazione report in corso…");
+
+    // Valida che ci siano abbastanza risposte
+    if (!validaRisposteComplete()) {
+        return;
+    }
+
+    mostraLoader("Generazione report premium...");
+
+    //caricaRegoleIncongruenze();//
+    
+    setTimeout(() => {
+        const blocks = document.querySelectorAll("#questionarioContainer .domanda-block");
+        
+        if (!blocks.length) {
+            nascondiLoader();
+            mostraToast("Prima genera il questionario.", "error");
+            return;
+        }
+
+    const risposte = [];
+    let sumPesata = 0;
+    let sumPesi = 0;
+
+    const aree = {};
+
+   blocks.forEach(block => {
+    const answerVal = block.getAttribute("data-answer");
+    if (!answerVal) return;
+
+    const v = parseInt(answerVal, 10);
+    const area = block.dataset.area || "Generale";
+
+    // ⭐⭐ MODIFICA PER AUMENTARE IL PESO DELLE DOMANDE ASSICURATIVE ⭐⭐
+    let pesoBase = parseFloat(block.dataset.peso || "1");
+    let moltiplicatore = (area.toLowerCase().includes("assicur")) ? 2 : 1;
+    const peso = pesoBase * moltiplicatore;
+    // ⭐⭐ FINE MODIFICA ⭐⭐
+
+    const id = block.dataset.qid || "";
+
+    risposte.push({
+        id,
+        area,
+        codice: id, 
+        peso,
+        valore: v
+    });
+// 🔧 ACCUMULO PER AREA (serve per radar chart + priorità)
+if (!aree[area]) {
+    aree[area] = { somma: 0, pesi: 0, risposte: 0 };
+}
+
+aree[area].somma += v * peso;
+aree[area].pesi += peso;
+aree[area].risposte += 1;
+
+
+    // Somme totali
+    sumPesata += v * peso;
+    sumPesi += peso;
+});
+
+    if (!risposte.length) {
+        nascondiLoader();
+        mostraToast("Compila almeno una domanda per generare il report.", "error");
+        return;
+    }
+
+const indiceGlobale = sumPesata / (sumPesi || 1);
+
+// Calcola punteggi per area
+const areePunteggio = {};
+Object.keys(aree).forEach(area => {
+    const a = aree[area];
+    areePunteggio[area] = Math.min(10, Math.max(0, (a.somma / (a.pesi || 1)) * 2));
+});
+
+const azienda = raccogliDatiAzienda();
+
+// 👉 NUOVO: indice di solidità 0–100
+const indiceSolidita = Math.round((indiceGlobale / 5) * 100);
+
+// 🔹 COSTRUISCO MAPPA RISPOSTE PER CODICE (es. HRW_01, CYB_01, ...)
+const risposteByCodice = {};
+risposte.forEach(r => {
+    if (r && r.codice) {
+        risposteByCodice[r.codice] = r.valore;
+    }
+});
+
+// 🔹 Per ora non usiamo ancora le incongruenze qui
+const incongruenzeRilevate = [];
+
+// 🔹 Polizze attive dall'anagrafica
+const polizzePossedute = Array.isArray(azienda.polizzeAttive) ? azienda.polizzeAttive : [];
+
+// 🔹 CALCOLO SCORING COMMERCIALE (se il motore è caricato)
+let scoringCommerciale = null;
+if (window.SCORTEX && typeof window.SCORTEX.calcolaScore === "function") {
+    scoringCommerciale = window.SCORTEX.calcolaScore(
+        azienda,
+        risposteByCodice,
+        incongruenzeRilevate,
+        polizzePossedute
+    );
+}
+
+window.REPORT_DATA = {
+    azienda,
+    indiceGlobale,
+    indiceSolidita,
+    risposte,
+    areePunteggio,
+
+    // 👇 QUI ORA C'È LO SCORING COMMERCIALE
+    scoringCommerciale,
+
+    prioritaProdotti: calcolaPrioritaPolizze({ azienda, areePunteggio, scoringCommerciale }),
+    gapAssicurativo: calcolaGapAssicurativo(),
+    raccomandazioneAssicurativa: generaTestoRaccomandazioneAssicurativa(calcolaGapAssicurativo()),
+    prioritaAssicurativa: calcolaPrioritaAssicurativa(calcolaGapAssicurativo()),
+    generatoIl: new Date().toISOString()
+};
+
+popolaReport(window.REPORT_DATA);
+nascondiLoader();
+
+
+    }, 500);
+}
+
+/* ============================================================
+   ENGINE 3 — POPOLAMENTO REPORT (UI)
+============================================================ */
+/* ============================================================
+   GRAFICO RADAR AREE
+============================================================ */
+
+function creaGraficoRadar(areePunteggio) {
+    const canvas = document.getElementById("areaRadarChart");
+    if (!canvas) return;
+    
+    // Distruggi grafico precedente se esistente
+    if (window.areaChart) {
+        window.areaChart.destroy();
+    }
+    
+    const labels = Object.keys(areePunteggio);
+    const values = labels.map(area => areePunteggio[area]);
+    
+    const ctx = canvas.getContext("2d");
+    
+    window.areaChart = new Chart(ctx, {
+        type: "radar",
+        data: {
+            labels: labels,
+            datasets: [{
+                label: "Livello di Protezione",
+                data: values,
+                backgroundColor: "rgba(185, 28, 28, 0.2)",
+                borderColor: "rgba(185, 28, 28, 1)",
+                borderWidth: 2,
+                pointBackgroundColor: "rgba(185, 28, 28, 1)",
+                pointBorderColor: "#fff",
+                pointHoverBackgroundColor: "#fff",
+                pointHoverBorderColor: "rgba(185, 28, 28, 1)",
+                pointRadius: 4,
+                pointHoverRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+                r: {
+                    min: 0,
+                    max: 10,
+                    ticks: {
+                        stepSize: 2,
+                        font: {
+                            size: 11
+                        }
+                    },
+                    pointLabels: {
+                        font: {
+                            size: 12,
+                            weight: "600"
+                        }
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+}
+function generaNormotipo(data) {
+    try {
+        const box = document.getElementById("normotipoBox");
+        if (!box) {
+            console.warn("⚠ normotipoBox non trovato nel DOM.");
+            return;
+        }
+
+        const azienda = data.azienda || {};
+        const settore = azienda.settore || "non specificato";
+        const dip = azienda.dipendenti || "n.d.";
+        const indice = (typeof data.indiceGlobale === "number")
+            ? data.indiceGlobale
+            : null;
+        const gap = data.gapAssicurativo || {};
+
+        // Classificazione molto semplice, giusto per avere un cluster leggibile
+        let cluster = "Profilo base";
+        if (indice !== null) {
+            if (indice >= 8) {
+                cluster = "Azienda evoluta e ben strutturata";
+            } else if (indice >= 6) {
+                cluster = "Azienda in buona evoluzione con aree da consolidare";
+            } else if (indice >= 4) {
+                cluster = "Azienda esposta, governance e continuità da rafforzare";
+            } else {
+                cluster = "Azienda vulnerabile: priorità alla messa in sicurezza";
+            }
+        }
+
+        // Eventuale sintesi del gap, se vuoi dare un po' di “sale”
+        const descrGap = gap.livelloDescrittivo || gap.descrizione || "";
+
+        box.innerHTML = `
+            <p><strong>Settore:</strong> ${settore}</p>
+            <p><strong>Dipendenti dichiarati:</strong> ${dip}</p>
+            <p><strong>Cluster normotipo:</strong> ${cluster}</p>
+            ${
+                descrGap
+                    ? `<p style="margin-top:6px;"><strong>Nota di rischio sintetica:</strong> ${descrGap}</p>`
+                    : ""
+            }
+            <p style="margin-top:8px; font-size:13px; color:#555;">
+                Profilo generato automaticamente sulla base delle risposte al questionario
+                e degli indicatori di rischio emersi.
+            </p>
+        `;
+    } catch (e) {
+        console.error("Errore in generaNormotipo:", e);
+    }
+}
+
+function popolaReport(data) {
+    if (!data) return;
+
+    // Header
+    const ragsoc = data.azienda.ragioneSociale || "Il cliente";
+    const settore = data.azienda.settore || "n.d.";
+    const dip = data.azienda.dipendenti || "n.d.";
+
+    const header = `${ragsoc} — Settore: ${settore.toUpperCase() || "N.D."} — Dipendenti: ${dip}`;
+    document.getElementById("reportHeaderText").textContent = header;
+
+// Indice globale (1–5)
+document.getElementById("indiceGlobaleValue").textContent = formattaNumero(data.indiceGlobale);
+
+// Indice di solidità (0–100)
+const solidita = (typeof data.indiceSolidita === "number")
+    ? data.indiceSolidita
+    : Math.round((data.indiceGlobale / 5) * 100);
+
+const soliditaEl = document.getElementById("indiceSoliditaText");
+if (soliditaEl) {
+    soliditaEl.textContent = `Indice di solidità complessiva: ${solidita}/100`;
+}
+
+// Domande totali
+document.getElementById("reportDomandeValue").textContent = data.risposte.length.toString();
+
+
+    // Punteggi per area
+    const containerAree = document.getElementById("areaScoresContainer");
+    containerAree.innerHTML = "";
+    const sortedAreas = Object.keys(data.areePunteggio).sort();
+
+    sortedAreas.forEach(area => {
+        const val = data.areePunteggio[area];
+        const card = document.createElement("div");
+        card.className = "area-score-card";
+        card.innerHTML = `
+            <div class="area-score-title">${area}</div>
+            <div class="area-score-value">${formattaNumero(val)}</div>
+        `;
+        containerAree.appendChild(card);
+    });
+
+// Crea grafico radar
+    creaGraficoRadar(data.areePunteggio);
+generaIncongruenze(data);
+
+    // Normotipo
+    generaNormotipo(data);
+
+    // Priorità assicurative
+    generaPriorita(data);
+    renderPrioritaProdotti(data);
+
+    // Gap / Bias / What-if / Benchmark
+    generaGapBiasWhatIfBenchmark(data);
+
+    generaPrioritaAssicurativa(data);
+
+    generaRaccomandazioneAssicurativa(data);
+
+    generaIncongruenzeNelReport(data);
+
+    document.getElementById("reportPremium").style.display = "block";
+    document.getElementById("reportPremium").scrollIntoView({behavior: "smooth"});
+
+    mostraToast("Report generato.", "success");
+// Salva analisi nell'archivio
+    if (salvaAnalisiArchivio(data)) {
+        const archivio = caricaArchivioAnalisi();
+        console.log(`✅ Analisi salvata. Totale in archivio: ${archivio.length}`);
+    }
+}
+
+// ============================================================
+//   IDENTIFICAZIONE NORMOTIPI COMPORTAMENTALI
+// ============================================================
+function identificaNormotipoComportamentale(data) {
+    const score = data.indiceGlobale;
+    const azienda = data.azienda;
+    const fatturato = azienda.fatturato || 0;
+    const dipendenti = azienda.dipendenti || 0;
+    const polizze = azienda.polizzeAttive || [];
+    const gaps = data.gapAssicurativo || [];
+    
+    // NORMOTIPO 1: Imprenditore Audace Sottostimatore
+    if (score < 2.5 && fatturato > 5000000 && gaps.length > 5) {
+        return {
+            label: "Imprenditore Audace Sottostimatore",
+            icona: "🚀",
+            colore: "#DC2626",
+            descrizione: "Alta capacità imprenditoriale e crescita rapida, ma scarsa percezione dei rischi. Tipico di startup in scaling o imprenditori focalizzati su opportunità più che su minacce. Il successo passato crea falso senso di invulnerabilità.",
+            approccio: "Usa approccio SCENARIO-BASED: mostra casi reali di aziende simili colpite da eventi imprevisti. Evidenzia come la protezione NON rallenta la crescita ma la ABILITA. Parla il loro linguaggio: ROI, opportunità perse, competitive advantage.",
+            priorita: [
+                "Business Interruption (proteggere il momentum)",
+                "RC Prodotti/Professionale (crescita = maggior esposizione)",
+                "Cyber Risk (digitalizzazione rapida = vulnerabilità)",
+                "Key Man su fondatori (dipendenza critica)"
+            ]
+        };
+    }
+    
+    // NORMOTIPO 2: Prudente Sovraprotetto
+    if (score > 4 && polizze.length > 8) {
+        return {
+            label: "Prudente Sovraprotetto",
+            icona: "🛡️",
+            colore: "#059669",
+            descrizione: "Forte avversione al rischio, possibile sovrassicurazione. Tipico di seconda generazione familiare o dopo sinistro importante. Ottima sensibilità ma rischio inefficienza costi e duplicazioni coverage.",
+            approccio: "Focus su OTTIMIZZAZIONE: non vendere nuove polizze ma RAZIONALIZZA portfolio. Analizza costi-benefici, evidenzia duplicazioni, proponi consolidamento. Posizionati come partner che fa risparmiare mantenendo protezione.",
+            priorita: [
+                "Audit completo portfolio esistente",
+                "Eliminazione duplicazioni coverage",
+                "Ottimizzazione massimali vs premi",
+                "Consolidamento fornitori per sconti volume"
+            ]
+        };
+    }
+    
+    // NORMOTIPO 3: Reattivo Post-Sinistro
+    if (score >= 3.5 && polizze.length >= 3 && polizze.length <= 6) {
+        return {
+            label: "Consapevole Reattivo",
+            icona: "⚡",
+            colore: "#EA580C",
+            descrizione: "Consapevolezza acquisita dopo esperienza diretta (sinistro, near-miss, caso competitor). Finestra temporale di recettività elevata. Motivazione forte ma rischio focus solo su ultimo evento vs visione olistica.",
+            approccio: "APPROFITTA della consapevolezza attuale per AMPLIARE protezione. Parti dall'evento vissuto, poi espandi: 'Ottimo aver coperto X, ma cosa succederebbe se...'. Non dilazionare: la memoria del dolore svanisce rapidamente.",
+            priorita: [
+                "Consolidamento area già colpita",
+                "Estensione ad aree correlate",
+                "Scenari what-if su altri rischi",
+                "Programma revisione annuale (mantenere attenzione)"
+            ]
+        };
+    }
+    
+    // NORMOTIPO 4: Razionale Cost-Conscious
+    if (score >= 2.8 && score <= 3.8 && fatturato > 2000000 && polizze.length >= 2) {
+        return {
+            label: "Razionale Cost-Conscious",
+            icona: "📊",
+            colore: "#0891B2",
+            descrizione: "Approccio data-driven alle decisioni, attento a costi-benefici. Tipico di CFO o imprenditori con background finanziario. Apprezza numeri, ROI, expected loss. Diffidente verso 'vendite emotive'.",
+            approccio: "Linguaggio QUANTITATIVO: expected loss, probabilità, TCO (Total Cost of Ownership), payback period. Fornisci Excel con calcoli, benchmark settoriali, analisi sensibilità. Posizionati come analista, non venditore.",
+            priorita: [
+                "Analisi expected loss per categoria rischio",
+                "Benchmark premi vs concorrenza",
+                "Calcolo ROI protection per evento",
+                "Modello decisionale quantitativo"
+            ]
+        };
+    }
+    
+    // NORMOTIPO 5: Tradizionalista Compliance-Driven
+    if (score >= 2.5 && score <= 3.5 && ["EDILIZIA", "MANIFATTURA", "TRASPORTI"].includes(azienda.settore)) {
+        return {
+            label: "Tradizionalista Compliance-Driven",
+            icona: "📜",
+            colore: "#7C3AED",
+            descrizione: "Focus su obblighi normativi e 'si è sempre fatto così'. Tipico settori maturi e regolamentati. Acquista polizze per necessità legale più che convinzione. Rischio sotto-protezione aree non obbligatorie.",
+            approccio: "Partenza da COMPLIANCE: evidenzia cosa è obbligatorio, poi ESPANDI su 'best practice settoriali'. Usa leva reputazionale: 'Le aziende leader fanno così'. Riferimenti a normative imminenti (es. NIS2 per cyber).",
+            priorita: [
+                "Audit compliance normativa settoriale",
+                "Certificazioni e polizze richieste da gare/clienti",
+                "Best practice ANIA per il settore",
+                "Anticipazione nuovi obblighi (es. ESG, cyber)"
+            ]
+        };
+    }
+    
+    // NORMOTIPO 6: Minimalista Reattivo
+    if (score < 2 && polizze.length <= 2) {
+        return {
+            label: "Minimalista Reattivo",
+            icona: "⏸️",
+            colore: "#DC2626",
+            descrizione: "Protezione minima o assente. Possibili cause: vincoli budget, startup fase seed, scarsa cultura rischio, settore percepito 'a basso rischio'. Alta vulnerabilità ma bassa recettività.",
+            approccio: "Start SMALL: proponi pacchetto base minimo (RC + Cyber entry-level). Focus su 'costo caffè al giorno'. Evita analisi complesse, usa storytelling emotivo. Obiettivo: fare primo passo, costruire relazione per upgrade futuro.",
+            priorita: [
+                "RC Generale/Professionale (obbligatoria molti settori)",
+                "Cyber Risk base (€ 100-150/mese)",
+                "Programma educazione rischi (webinar, casi reali)",
+                "Follow-up trimestrale per upgrade progressivo"
+            ]
+        };
+    }
+    
+    // DEFAULT: Equilibrato Standard
+    return {
+        label: "Profilo in Equilibrio",
+        icona: "⚖️",
+        colore: "#0891B2",
+        descrizione: "L'azienda presenta un livello di protezione complessivamente adeguato per dimensione e settore. Buona consapevolezza dei rischi principali, con margini di ottimizzazione su aree specifiche.",
+        approccio: "Approccio CONSULENZIALE PURO: non spingere vendita ma posizionarsi come advisor. Focus su gap analysis mirata, ottimizzazione coverage esistenti, preparazione a crescita futura. Revisione annuale per mantenere adeguatezza.",
+        priorita: [
+            "Revisione annuale portfolio (mercato evolve)",
+            "Ottimizzazione massimali vs inflazione",
+            "Valutazione nuovi rischi (cyber, ESG, supply chain)",
+            "Scenario planning per crescita/M&A"
+        ]
+    };
+}
+
+// ============================================================
+// SCENARI DI IMPATTO ECONOMICO (WHAT-IF)
+// ============================================================
+function calcolaScenarioImpatto(area, azienda) {
+    try {
+        const fatturato = Number(azienda.fatturato || 0);
+        const dipendenti = Number(azienda.dipendenti || 0);
+        const valoreBeni = Number(azienda.valoreBeni || 0);
+
+        const areaNorm = (area || "").toLowerCase();
+
+        let evento = "Evento critico aziendale";
+        let impatti = {};
+        let probabilita = 0.05; // 5% annuo base
+        let premioPerc = 0.02;  // 2% del danno come ordine di grandezza premio
+
+        // Base sensata per non avere tutti zero se i dati non sono valorizzati
+        const baseFatturato = fatturato > 0 ? fatturato : 500000;
+        const baseBeni = valoreBeni > 0 ? valoreBeni : baseFatturato * 0.4;
+
+        if (areaNorm.includes("operativ") || areaNorm.includes("business")) {
+            evento = "Blocco dell’operatività aziendale per 15 giorni";
+            impatti = {
+                "Perdita di fatturato": baseFatturato * 0.05,
+                "Costi straordinari di ripartenza": baseFatturato * 0.01,
+                "Penali contrattuali / ritardi": baseFatturato * 0.005
+            };
+            probabilita = 0.08;
+            premioPerc = 0.025;
+        } else if (areaNorm.includes("cyber")) {
+            evento = "Attacco cyber con blocco sistemi e perdita dati";
+            impatti = {
+                "Fermo IT e produttivo": baseFatturato * 0.03,
+                "Ripristino sistemi / consulenze": baseFatturato * 0.015,
+                "Danni reputazionali e perdita clienti": baseFatturato * 0.01
+            };
+            probabilita = 0.10;
+            premioPerc = 0.03;
+        } else if (areaNorm.includes("governance") || areaNorm.includes("compliance")) {
+            evento = "Violazione normativa / sanzione di ente di controllo";
+            impatti = {
+                "Sanzioni e spese legali": baseFatturato * 0.01,
+                "Costi di adeguamento urgente": baseFatturato * 0.008,
+                "Impatto reputazionale": baseFatturato * 0.005
+            };
+            probabilita = 0.06;
+            premioPerc = 0.02;
+        } else if (areaNorm.includes("people") || areaNorm.includes("hr")) {
+            evento = "Infortunio grave / perdita risorsa chiave";
+            impatti = {
+                "Costi sostituzione e formazione": baseFatturato * 0.008,
+                "Perdita di produttività": baseFatturato * 0.01,
+                "Possibili rivalse / contenziosi": baseFatturato * 0.005
+            };
+            probabilita = 0.07;
+            premioPerc = 0.018;
+        } else if (areaNorm.includes("continuit") || areaNorm.includes("property")) {
+            evento = "Danno a fabbricato / impianti con fermo produzione";
+            impatti = {
+                "Danni a beni materiali": baseBeni * 0.20,
+                "Costi di ripristino e delocalizzazione": baseBeni * 0.10,
+                "Perdita di margine di contribuzione": baseFatturato * 0.03
+            };
+            probabilita = 0.04;
+            premioPerc = 0.02;
+        } else {
+            // Default generico se l’area non rientra nelle categorie sopra
+            evento = `Evento critico nell’area ${area}`;
+            impatti = {
+                "Impatto economico diretto": baseFatturato * 0.02,
+                "Costi indiretti e organizzativi": baseFatturato * 0.01
+            };
+            probabilita = 0.05;
+            premioPerc = 0.02;
+        }
+
+        // Calcolo totale
+        let totale = 0;
+        Object.values(impatti).forEach(v => {
+            totale += Number(v) || 0;
+        });
+
+        const expectedLoss = totale * probabilita;
+        const premioStimato = totale * premioPerc;
+
+        return {
+            evento,
+            impatti,
+            totale,
+            probabilita,
+            expectedLoss,
+            premioStimato
+        };
+    } catch (e) {
+        console.error("Errore in calcolaScenarioImpatto:", e);
+        // fallback ultra difensivo
+        return {
+            evento: "Scenario non disponibile",
+            impatti: { "Impatto stimato": 0 },
+            totale: 0,
+            probabilita: 0,
+            expectedLoss: 0,
+            premioStimato: 0
+        };
+    }
+}
+
+function generaGapBiasWhatIfBenchmark(data) {
+    const gapC = document.getElementById("gapContainer");
+    const biasC = document.getElementById("biasContainer");
+    const wiC = document.getElementById("whatIfContainer");
+    const bmC = document.getElementById("benchmarkContainer");
+
+    gapC.innerHTML = "";
+    biasC.innerHTML = "";
+    wiC.innerHTML = "";
+    bmC.innerHTML = "";
+
+    const entries = Object.entries(data.areePunteggio).sort((a,b) => a[1]-b[1]);
+    const worst = entries[0];
+
+    if (worst) {
+        const [areaPeggiore, val] = worst;
+
+        // GAP
+        const gap = document.createElement("div");
+        gap.style.padding = "10px 12px";
+        gap.style.borderRadius = "10px";
+        gap.style.border = "1px solid #e5e7eb";
+        gap.style.background = "#f9fafb";
+        gap.innerHTML = `
+            <div style="font-size:14px; font-weight:600; margin-bottom:4px;">
+                Gap principale: ${areaPeggiore}
+            </div>
+            <div style="font-size:13px; color:#4b5563;">
+                Il livello di protezione attuale in quest’area è <strong>${formattaNumero(val)}/5</strong>.  
+                L’obiettivo ragionevole potrebbe essere portarla almeno a <strong>4/5</strong> nel prossimo periodo,
+                intervenendo su procedure interne e coperture assicurative dedicate.
+            </div>
+        `;
+        gapC.appendChild(gap);
+
+        // BIAS
+        const bias = document.createElement("div");
+        bias.style.padding = "10px 12px";
+        bias.style.borderRadius = "10px";
+        bias.style.border = "1px solid #e5e7eb";
+        bias.style.background = "#f9fafb";
+        bias.innerHTML = `
+            <div style="font-size:14px; font-weight:600; margin-bottom:4px;">
+                Possibile bias del cliente
+            </div>
+            <div style="font-size:13px; color:#4b5563;">
+                La percezione del rischio in <strong>${areaPeggiore}</strong> potrebbe essere sottostimata
+                (es. ottimismo eccessivo, abitudine, “non è mai successo”).  
+                Utilizza esempi concreti e casi reali per rendere il rischio più tangibile.
+            </div>
+        `;
+        biasC.appendChild(bias);
+
+        // WHAT-IF con calcoli reali
+const scenarioImpatto = calcolaScenarioImpatto(areaPeggiore, data.azienda);
+
+const wi = document.createElement("div");
+wi.style.cssText = `
+    padding:16px;
+    background:#FFF7ED;
+    border-left:5px solid #F97316;
+    border-radius:10px;
+`;
+
+wi.innerHTML = `
+    <div style="font-weight:700; font-size:15px; color:#9A3412; margin-bottom:8px;">
+        💥 Scenario Critico: ${scenarioImpatto.evento}
+    </div>
+    
+    <div style="background:#FFFFFF; padding:12px; border-radius:8px; margin:12px 0;">
+        <div style="font-weight:600; font-size:14px; color:#374151; margin-bottom:10px;">
+            📊 Impatti Economici Stimati
+        </div>
+        ${Object.entries(scenarioImpatto.impatti).map(([tipo, valore]) => `
+            <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+                <span style="color:#6B7280; font-size:13px;">${tipo}:</span>
+                <span style="font-weight:600; color:#B91C1C; font-size:13px;">
+                    ${formattaEuro(valore)}
+                </span>
+            </div>
+        `).join('')}
+        <hr style="margin:10px 0; border:none; border-top:2px solid #E5E7EB;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-weight:700; font-size:15px; color:#111827;">
+                TOTALE PERDITA STIMATA
+            </span>
+            <span style="font-weight:700; font-size:20px; color:#B91C1C;">
+                ${formattaEuro(scenarioImpatto.totale)}
+            </span>
+        </div>
+    </div>
+    
+    <div style="display:flex; gap:12px; margin-top:12px; flex-wrap:wrap;">
+        <div style="flex:1; min-width:140px; background:#FFFFFF; padding:10px; 
+                    border-radius:8px; text-align:center;">
+            <div style="font-size:11px; color:#6B7280; margin-bottom:4px;">
+                Probabilità annua
+            </div>
+            <div style="font-size:18px; font-weight:700; color:#EA580C;">
+                ${(scenarioImpatto.probabilita * 100).toFixed(1)}%
+            </div>
+        </div>
+        <div style="flex:1; min-width:140px; background:#FFFFFF; padding:10px; 
+                    border-radius:8px; text-align:center;">
+            <div style="font-size:11px; color:#6B7280; margin-bottom:4px;">
+                Expected Loss
+            </div>
+            <div style="font-size:18px; font-weight:700; color:#B91C1C;">
+                ${formattaEuro(scenarioImpatto.expectedLoss)}
+            </div>
+        </div>
+    </div>
+    
+    <div style="margin-top:12px; padding:10px; background:#ECFDF5; border-radius:8px;">
+        <div style="font-size:12px; color:#065F46;">
+            ✅ <strong>Protezione adeguata:</strong> Premio stimato 
+            <strong>${formattaEuro(scenarioImpatto.premioStimato)}/anno</strong>
+            <br>
+            💰 <strong>Risparmio potenziale in caso sinistro:</strong> 
+            <strong>${formattaEuro(scenarioImpatto.totale - scenarioImpatto.premioStimato)}</strong>
+        </div>
+    </div>
+`;
+
+wiC.appendChild(wi);
+
+        // BENCHMARK (testo generico)
+        const bm = document.createElement("div");
+        bm.style.padding = "10px 12px";
+        bm.style.borderRadius = "10px";
+        bm.style.border = "1px solid #e5e7eb";
+        bm.style.background = "#f9fafb";
+        bm.innerHTML = `
+            <div style="font-size:14px; font-weight:600; margin-bottom:4px;">
+                Benchmark indicativo
+            </div>
+            <div style="font-size:13px; color:#4b5563;">
+                Molte aziende del settore arrivano a livelli di protezione medi intorno a <strong>3,5–4/5</strong>
+                nelle aree chiave.  
+                Portare <strong>${areaPeggiore}</strong> verso questi valori permette di allinearsi alle best practice
+                di mercato e migliorare la resilienza complessiva.
+            </div>
+        `;
+        bmC.appendChild(bm);
+    } else {
+        gapC.innerHTML = `<p style="color:#6b7280; margin:0;">Servono più risposte per elaborare una Gap Analysis.</p>`;
+        biasC.innerHTML = `<p style="color:#6b7280; margin:0;">Servono più risposte per identificare eventuali bias.</p>`;
+        wiC.innerHTML = `<p style="color:#6b7280; margin:0;">Servono più dati per simulare scenari What-If.</p>`;
+        bmC.innerHTML = `<p style="color:#6b7280; margin:0;">Servono più dati per un benchmark significativo.</p>`;
+    }
+}
+
+/* ============================================================
+   EXPORT CSV / XLSX / STAMPA
+============================================================ */
+
+function exportCSV() {
+    if (!window.REPORT_DATA) {
+        mostraToast("Genera prima il report.", "error");
+        return;
+    }
+
+    const rows = [];
+    rows.push(["ID Domanda", "Area", "Peso", "Valore (1-5)"]);
+
+    window.REPORT_DATA.risposte.forEach(r => {
+        rows.push([r.id, r.area, r.peso, r.valore]);
+    });
+
+    let csv = "";
+    rows.forEach(r => {
+        csv += r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(";") + "\n";
+    });
+
+    const blob = new Blob([csv], {type: "text/csv;charset=utf-8;"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "report_generali_business_advisor.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    mostraToast("CSV esportato.", "success");
+}
+
+function exportXLSX() {
+    if (!window.REPORT_DATA) {
+        mostraToast("Genera prima il report.", "error");
+        return;
+    }
+
+    const data = window.REPORT_DATA;
+    const sheetData = [];
+    sheetData.push(["ID Domanda", "Area", "Peso", "Valore (1-5)"]);
+
+    data.risposte.forEach(r => {
+        sheetData.push([r.id, r.area, r.peso, r.valore]);
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet(sheetData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Report");
+
+    XLSX.writeFile(wb, "report_generali_business_advisor.xlsx");
+
+    mostraToast("XLSX esportato.", "success");
+}
+
+function stampaReport() {
+    if (!window.REPORT_DATA) {
+        mostraToast("Genera prima il report.", "error");
+        return;
+    }
+
+    // Nascondi questionario prima della stampa
+    const questionario = document.getElementById("questionarioSection");
+    const anagrafica = document.querySelector(".section-card");
+
+    const oldDisplayQ = questionario.style.display;
+    const oldDisplayA = anagrafica.style.display;
+
+    questionario.style.display = "none";
+    anagrafica.style.display = "none";
+
+    window.print();
+
+    // Ripristina
+    questionario.style.display = oldDisplayQ;
+    anagrafica.style.display = oldDisplayA;
+}
+
+/* ============================================================
+   INIZIALIZZAZIONE VALIDATORI
+============================================================ */
+
+// Attiva validazione P.IVA
+document.addEventListener("DOMContentLoaded", function() {
+    const pivaInput = document.getElementById("partitaIVA");
+    
+    // Validazione real-time
+    pivaInput.addEventListener("input", aggiornaValidazionePIVA);
+    
+    // Blocca caratteri non numerici
+    pivaInput.addEventListener("keypress", soloNumeriPIVA);
+    
+    // Validazione anche su paste
+    pivaInput.addEventListener("paste", function(e) {
+        setTimeout(aggiornaValidazionePIVA, 10);
+    });
+
+    // Validazione real-time EMAIL
+    const emailInput = document.getElementById("emailAzienda");
+    emailInput.addEventListener("blur", function() {
+        const valore = this.value.trim();
+        if (valore && !validaEmail(valore)) {
+            this.style.borderColor = "#b91c1c";
+            this.style.backgroundColor = "#fef2f2";
+        } else {
+            this.style.borderColor = "";
+            this.style.backgroundColor = "";
+        }
+    });
+    
+    // Validazione real-time TELEFONO
+    const telefonoInput = document.getElementById("telefonoAzienda");
+    telefonoInput.addEventListener("blur", function() {
+        const valore = this.value.trim();
+        if (valore && !validaTelefonoItaliano(valore)) {
+            this.style.borderColor = "#b91c1c";
+            this.style.backgroundColor = "#fef2f2";
+        } else {
+            this.style.borderColor = "";
+            this.style.backgroundColor = "";
+        }
+    });
+    
+    // Validazione real-time CAP
+    const capInput = document.getElementById("cap");
+    capInput.addEventListener("blur", function() {
+        const valore = this.value.trim();
+        if (valore && !validaCAP(valore)) {
+            this.style.borderColor = "#b91c1c";
+            this.style.backgroundColor = "#fef2f2";
+        } else {
+            this.style.borderColor = "";
+            this.style.backgroundColor = "";
+        }
+    });
+
+// Attiva gestione campi "Altro"
+    gestisciCampoAltro("settore", "settoreAltro");
+    gestisciCampoAltro("formaGiuridica", "formaAltro");
+    gestisciCampoAltro("interlocutore", "interlocutoreAltro");
+    gestisciCampoAltro("tipoStruttura", "strutturaAltro");
+
+    // Attiva formattazione fatturato
+    gestisciFatturatoInput();
+
+// Mostra contatore analisi nell'archivio
+    aggiornaContatorArchivio();
+
+// Inizializza autocomplete comuni
+    inizializzaAutocompleteCitta();
+});
+/* ============================================================
+   AUTOCOMPLETE COMUNI ITALIANI
+============================================================ */
+
+function inizializzaAutocompleteCitta() {
+    const inputCitta = document.getElementById("citta");
+    const inputProvincia = document.getElementById("provincia");
+    const inputCAP = document.getElementById("cap");
+    
+    if (!inputCitta || !window.COMUNI_ITALIA) {
+        console.error("Campo città o database comuni non disponibile");
+        return;
+    }
+    
+    // Wrappa il campo in un container autocomplete
+    const parent = inputCitta.parentElement;
+    const container = document.createElement("div");
+    container.className = "autocomplete-container";
+    parent.insertBefore(container, inputCitta);
+    container.appendChild(inputCitta);
+    
+    // Crea il dropdown per i suggerimenti
+    const dropdown = document.createElement("div");
+    dropdown.className = "autocomplete-items";
+    dropdown.style.display = "none";
+    container.appendChild(dropdown);
+    
+    let currentFocus = -1;
+    
+    // Funzione per mostrare suggerimenti
+    function mostraSuggerimenti() {
+        const val = inputCitta.value.trim().toLowerCase();
+        dropdown.innerHTML = "";
+        dropdown.style.display = "none";
+        currentFocus = -1;
+        
+        if (val.length < 2) return;
+        
+        // Filtra comuni che iniziano con il testo digitato
+        const matches = window.COMUNI_ITALIA.filter(c => 
+            c.nome.toLowerCase().startsWith(val)
+        ).slice(0, 10); // Max 10 risultati
+        
+        if (matches.length === 0) return;
+        
+        matches.forEach(comune => {
+            const item = document.createElement("div");
+            item.className = "autocomplete-item";
+            
+            // Evidenzia la parte che corrisponde
+            const start = comune.nome.substring(0, val.length);
+            const resto = comune.nome.substring(val.length);
+            
+            item.innerHTML = `
+                <strong>${start}</strong>${resto}
+                <small>${comune.provincia} - CAP: ${comune.cap}</small>
+            `;
+            
+            // Click su suggerimento
+            item.addEventListener("click", function() {
+                inputCitta.value = comune.nome;
+                inputProvincia.value = comune.provincia;
+                inputCAP.value = comune.cap;
+                dropdown.style.display = "none";
+                
+                mostraToast(`Compilato: ${comune.nome} (${comune.provincia})`, "success");
+            });
+            
+            dropdown.appendChild(item);
+        });
+        
+        dropdown.style.display = "block";
+    }
+    
+    // Event listeners
+    inputCitta.addEventListener("input", mostraSuggerimenti);
+    
+    // Gestione tastiera (frecce su/giù, enter, esc)
+    inputCitta.addEventListener("keydown", function(e) {
+        const items = dropdown.querySelectorAll(".autocomplete-item");
+        
+        if (e.keyCode === 40) { // Freccia GIÙ
+            currentFocus++;
+            aggiungiClasse(items);
+            e.preventDefault();
+        } else if (e.keyCode === 38) { // Freccia SU
+            currentFocus--;
+            aggiungiClasse(items);
+            e.preventDefault();
+        } else if (e.keyCode === 13) { // ENTER
+            e.preventDefault();
+            if (currentFocus > -1 && items[currentFocus]) {
+                items[currentFocus].click();
+            }
+        } else if (e.keyCode === 27) { // ESC
+            dropdown.style.display = "none";
+        }
+    });
+    
+    function aggiungiClasse(items) {
+        if (!items || items.length === 0) return;
+        
+        // Rimuovi evidenziazione precedente
+        items.forEach(item => item.style.backgroundColor = "");
+        
+        // Gestisci limiti
+        if (currentFocus >= items.length) currentFocus = 0;
+        if (currentFocus < 0) currentFocus = items.length - 1;
+        
+        // Evidenzia elemento corrente
+        items[currentFocus].style.backgroundColor = "#f3f4f6";
+        items[currentFocus].scrollIntoView({ block: "nearest" });
+    }
+    
+    // Chiudi dropdown se si clicca fuori
+    document.addEventListener("click", function(e) {
+        if (!container.contains(e.target)) {
+            dropdown.style.display = "none";
+        }
+    });
+}
+
+// ===========================
+// POLIZZE ASSICURATIVE — UI
+// ===========================
+
+// Lista polizze da mostrare come pulsanti
+const POLIZZE = [
+    { id: "incendio", label: "Incendio / Fabbricato / Property" },
+    { id: "rcg", label: "RCT / RCO" },
+    { id: "infortuni_titolare", label: "Infortuni Titolare / Soci" },
+    { id: "keyman", label: "Key Man / Uomo chiave" },
+    { id: "vita_tcm", label: "Vita / TCM soci / garanti" },
+    { id: "sanitaria", label: "Sanitaria / Welfare dipendenti" },
+    { id: "cyber", label: "Cyber Risk" },
+    { id: "tutela_legale", label: "Tutela Legale" },
+    { id: "trasporti", label: "Merci trasportate / Trasporti" },
+    { id: "credito", label: "Credito commerciale" },
+    { id: "nessuna", label: "Nessuna polizza rilevante" }
+];
+
+
+// Funzione che crea i pulsanti dinamici
+function generaPolizzeUI() {
+
+    const container = document.getElementById("polizzeContainer");
+    container.innerHTML = "";
+
+    POLIZZE.forEach(pol => {
+        const btn = document.createElement("div");
+        btn.className = "polizza-btn";
+        btn.dataset.id = pol.id;
+        btn.textContent = pol.label;
+
+        btn.onclick = () => togglePolizza(btn, pol);
+
+        container.appendChild(btn);
+    });
+}
+
+
+// Attiva/disattiva polizza e mostra toast
+function togglePolizza(button, polizza) {
+
+    const active = button.classList.toggle("attiva");
+
+    mostraToast(
+        active 
+        ? `Polizza aggiunta: ${polizza.label}`
+        : `Polizza rimossa: ${polizza.label}`
+    );
+}
+
+
+// Toast carino
+function mostraToast(messaggio, tipo = "info") {
+    const container = document.getElementById("toastContainer");
+    const t = document.createElement("div");
+
+    t.className = "toast";
+    if (tipo === "error") t.classList.add("toast-error");
+    if (tipo === "success") t.classList.add("toast-success");
+
+    t.textContent = messaggio;
+    container.appendChild(t);
+
+    // Mostra
+    requestAnimationFrame(() => t.classList.add("show"));
+
+    // Rimuovi dopo 2.6 sec
+    setTimeout(() => {
+        t.classList.remove("show");
+        setTimeout(() => container.removeChild(t), 200);
+    }, 2600);
+}
+
+// Chiama la generazione UI appena la pagina è pronta
+// document.addEventListener("DOMContentLoaded", generaPolizzeUI);
+// ===============================
+// CALCOLO GAP ASSICURATIVO
+// ===============================
+function calcolaGapAssicurativo() {
+
+    // Polizze attive selezionate dall'utente
+    const attive = raccogliPolizzeAttive();
+
+    // SET delle polizze consigliate (universo)
+    const universo = [
+        "incendio",
+        "rcg",
+        "infortuni_titolare",
+        "keyman",
+        "vita_tcm",
+        "sanitaria",
+        "cyber",
+        "tutela_legale",
+        "trasporti",
+        "credito"
+    ];
+
+    const gap = [];
+
+    universo.forEach(polizza => {
+        if (!attive.includes(polizza)) {
+            gap.push(polizza);
+        }
+    });
+
+    return gap; // ritorna elenco polizze mancanti
+}
+// ========================================================
+// GENERA TESTO DI RACCOMANDAZIONE ASSICURATIVA
+// ========================================================
+function generaTestoRaccomandazioneAssicurativa(gapList) {
+
+    if (!gapList || gapList.length === 0) {
+        return "L’azienda presenta un buon livello di protezione assicurativa. Non sono emersi gap rilevanti.";
+    }
+
+    const nomiPolizze = {
+        incendio: "Copertura Incendio / Property",
+        rcg: "Responsabilità Civile verso Terzi e Operai (RCT/RCO)",
+        infortuni_titolare: "Polizza Infortuni per Titolare e Soci",
+        keyman: "Copertura Key Man / Uomo Chiave",
+        vita_tcm: "Tutela Vita / TCM per soci e garanti",
+        sanitaria: "Copertura Sanitaria e Welfare Dipendenti",
+        cyber: "Protezione Cyber Risk",
+        tutela_legale: "Polizza di Tutela Legale",
+        trasporti: "Copertura Merci Trasportate / Trasporti",
+        credito: "Assicurazione del Credito Commerciale"
+    };
+
+    let testo = "Dall’analisi effettuata emergono delle aree di rischio non presidiate adeguatamente. In particolare risultano assenti le seguenti coperture assicurative:\n\n";
+
+    gapList.forEach(pol => {
+        testo += `• ${nomiPolizze[pol]}\n`;
+    });
+
+    testo += "\nSi consiglia di valutare l’introduzione di queste coperture al fine di:\n";
+    testo += "• Ridurre l’esposizione economica\n";
+    testo += "• Rafforzare la continuità operativa\n";
+    testo += "• Tutelare patrimonio, persone e responsabilità\n";
+    testo += "• Allineare l’azienda alle best practice di gestione del rischio\n";
+
+    return testo;
+}
+// ============================================================
+//   CALCOLO STIMA PREMI POLIZZE
+// ============================================================
+function stimaPremioPolizza(tipo, azienda) {
+    const fatturato = azienda.fatturato || 0;
+    const dipendenti = azienda.dipendenti || 0;
+    
+    // Tariffe base (parametri realistici mercato italiano)
+    const tariffe = {
+        incendio: {
+            nome: "Incendio / Property",
+            base: 800,
+            perDipendente: 15,
+            perFatturatoM: 200,
+            massimale: fatturato * 0.8
+        },
+        rcg: {
+            nome: "RCT / RCO",
+            base: 1200,
+            perDipendente: 45,
+            perFatturatoM: 150,
+            massimale: Math.max(1000000, fatturato * 0.5)
+        },
+        cyber: {
+            nome: "Cyber Risk",
+            base: 1500,
+            perDipendente: 60,
+            perFatturatoM: 180,
+            massimale: Math.min(2000000, fatturato * 0.3)
+        },
+        infortuni_titolare: {
+            nome: "Infortuni Titolare/Soci",
+            base: 600,
+            perDipendente: 0,
+            perFatturatoM: 50,
+            massimale: 500000
+        },
+        keyman: {
+            nome: "Key Man",
+            base: 2000,
+            perDipendente: 0,
+            perFatturatoM: 100,
+            massimale: fatturato * 0.5
+        },
+        vita_tcm: {
+            nome: "Vita / TCM",
+            base: 1000,
+            perDipendente: 80,
+            perFatturatoM: 80,
+            massimale: 1000000
+        },
+        sanitaria: {
+            nome: "Sanitaria / Welfare",
+            base: 500,
+            perDipendente: 120,
+            perFatturatoM: 0,
+            massimale: 50000
+        },
+        tutela_legale: {
+            nome: "Tutela Legale",
+            base: 400,
+            perDipendente: 8,
+            perFatturatoM: 30,
+            massimale: 100000
+        },
+        trasporti: {
+            nome: "Merci Trasportate",
+            base: 1000,
+            perDipendente: 20,
+            perFatturatoM: 120,
+            massimale: fatturato * 0.2
+        },
+        credito: {
+            nome: "Credito Commerciale",
+            base: 800,
+            perDipendente: 10,
+            perFatturatoM: 100,
+            massimale: fatturato * 0.4
+        }
+    };
+    
+    const tariffa = tariffe[tipo];
+    if (!tariffa) return null;
+    
+    let premio = tariffa.base;
+    premio += dipendenti * tariffa.perDipendente;
+    premio += (fatturato / 1000000) * tariffa.perFatturatoM;
+    
+    return {
+        tipo: tipo,
+        nome: tariffa.nome,
+        premioAnnuo: Math.round(premio),
+        massimale: Math.round(tariffa.massimale),
+        franchigia: Math.round(premio * 0.1)
+    };
+}
+
+function formattaEuro(valore) {
+    if (!valore || valore === 0) return "€ 0";
+    return new Intl.NumberFormat('it-IT', {
+        style: 'currency',
+        currency: 'EUR',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+    }).format(valore);
+}
+// ===============================
+// RACCOMANDAZIONE ASSICURATIVA
+// ===============================
+function generaRaccomandazioneAssicurativa(data) {
+    const box = document.getElementById("raccomandazioneBox");
+
+    const gap = data.gapAssicurativo || [];
+    
+    if (gap.length === 0) {
+        box.innerHTML = `
+            <div style="padding:15px; background:#ECFDF5; border-left:5px solid #10B981; 
+                        border-radius:8px; color:#065F46;">
+                ✅ L'azienda presenta un buon livello di protezione assicurativa
+            </div>
+        `;
+        return;
+    }
+    
+    let html = `<p style="margin:0 0 16px 0; color:#374151; font-size:15px; line-height:1.5;">
+        ${data.raccomandazioneAssicurativa || "Dall'analisi emergono alcune aree non presidiate adeguatamente."}
+    </p>`;
+    
+    // Tabella polizze consigliate con premi
+    html += `<div style="margin-top:20px;">
+        <h4 style="margin:0 0 12px 0; font-size:16px; color:#111827;">
+            💼 Polizze Consigliate & Stime Premio
+        </h4>
+        <div style="display:flex; flex-direction:column; gap:12px;">`;
+    
+    gap.forEach(polizzaId => {
+        const stima = stimaPremioPolizza(polizzaId, data.azienda);
+        if (!stima) return;
+        
+        html += `
+            <div style="padding:14px; background:#F9FAFB; border:1px solid #E5E7EB; 
+                        border-radius:10px; display:flex; justify-content:space-between; 
+                        align-items:center; flex-wrap:wrap; gap:10px;">
+                <div style="flex:1; min-width:200px;">
+                    <div style="font-weight:600; font-size:15px; color:#111827; margin-bottom:4px;">
+                        ${stima.nome}
+                    </div>
+                    <div style="font-size:13px; color:#6B7280;">
+                        Massimale: ${formattaEuro(stima.massimale)} • 
+                        Franchigia: ${formattaEuro(stima.franchigia)}
+                    </div>
+                </div>
+                <div style="text-align:right;">
+                    <div style="font-size:12px; color:#6B7280; margin-bottom:2px;">
+                        Premio annuo stimato
+                    </div>
+                    <div style="font-size:20px; font-weight:700; color:#B91C1C;">
+                        ${formattaEuro(stima.premioAnnuo)}
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += `</div></div>`;
+    
+    // Calcola totale
+    const totale = gap.reduce((sum, polizzaId) => {
+        const stima = stimaPremioPolizza(polizzaId, data.azienda);
+        return sum + (stima ? stima.premioAnnuo : 0);
+    }, 0);
+    
+    html += `
+        <div style="margin-top:16px; padding:12px; background:#FEF2F2; 
+                    border-left:5px solid #B91C1C; border-radius:8px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-weight:600; font-size:15px; color:#374151;">
+                    Investimento Totale Annuo Stimato
+                </span>
+                <span style="font-size:22px; font-weight:700; color:#B91C1C;">
+                    ${formattaEuro(totale)}
+                </span>
+            </div>
+            <p style="margin:8px 0 0 0; font-size:13px; color:#6B7280;">
+                ⚠️ Stime indicative. I premi definitivi dipendono da valutazione tecnica completa.
+            </p>
+        </div>
+    `;
+    
+    box.innerHTML = html;
+}
+
+// =========================================
+// PRIORITÀ PER SINGOLA COPERTURA MANCANTE
+// =========================================
+function generaPriorita(data) {
+    try {
+        const container = document.getElementById("prioritaContainer");
+        if (!container) {
+            console.warn("⚠ prioritaContainer non trovato nel DOM.");
+            return;
+        }
+
+        const gapList = data.gapAssicurativo || [];
+        container.innerHTML = "";
+
+        // Nessun gap -> nessuna priorità da elencare
+        if (!gapList.length) {
+            container.innerHTML = `
+                <div style="
+                    padding: 10px 14px;
+                    border-radius: 8px;
+                    background: #ECFDF3;
+                    border-left: 4px solid #16A34A;
+                    font-size: 14px;
+                    color: #166534;
+                ">
+                    Attualmente non emergono coperture mancanti rilevanti da prioritizzare.
+                </div>
+            `;
+            return;
+        }
+
+        const nomiPolizze = {
+            incendio: "Copertura Incendio / Property",
+            rcg: "Responsabilità Civile verso Terzi e Operai (RCT/RCO)",
+            infortuni_titolare: "Polizza Infortuni per Titolare e Soci",
+            keyman: "Copertura Key Man / Uomo Chiave",
+            vita_tcm: "Tutela Vita / TCM per soci e garanti",
+            sanitaria: "Copertura Sanitaria e Welfare Dipendenti",
+            cyber: "Protezione Cyber Risk",
+            tutela_legale: "Polizza di Tutela Legale",
+            trasporti: "Copertura Merci Trasportate / Trasporti",
+            credito: "Assicurazione del Credito Commerciale"
+        };
+
+        // Semplice logica di classificazione priorità
+        const alta = new Set([
+            "incendio",
+            "rcg",
+            "infortuni_titolare",
+            "keyman",
+            "vita_tcm",
+            "cyber"
+        ]);
+        const media = new Set([
+            "sanitaria",
+            "tutela_legale",
+            "credito"
+        ]);
+        // il resto va in "base"
+
+        gapList.forEach(pol => {
+            const nome = nomiPolizze[pol] || pol;
+
+            let livello = "Priorità base";
+            let colore = "#E5E7EB"; // grigio
+            let border = "#6B7280";
+
+            if (alta.has(pol)) {
+                livello = "Priorità alta";
+                colore = "#FEF2F2";
+                border = "#B91C1C";
+            } else if (media.has(pol)) {
+                livello = "Priorità media";
+                colore = "#FFFBEB";
+                border = "#D97706";
+            }
+
+            const card = document.createElement("div");
+            card.style.padding = "10px 14px";
+            card.style.borderRadius = "8px";
+            card.style.background = colore;
+            card.style.borderLeft = `4px solid ${border}`;
+            card.style.display = "flex";
+            card.style.flexDirection = "column";
+            card.style.gap = "4px";
+
+            card.innerHTML = `
+                <div style="font-weight:600; font-size:14px;">
+                    ${nome}
+                </div>
+                <div style="font-size:13px; color:#374151;">
+                    ${livello} &mdash; copertura attualmente non presente nel portafoglio aziendale.
+                </div>
+            `;
+
+            container.appendChild(card);
+        });
+    } catch (e) {
+        console.error("Errore in generaPriorita:", e);
+    }
+}
+
+function generaPrioritaAssicurativa(data) {
+    const box = document.getElementById("prioritaAssBox");
+
+    if (!data.prioritaAssicurativa) {
+        box.innerHTML = "";
+        return;
+    }
+
+    const p = data.prioritaAssicurativa;
+
+    box.innerHTML = `
+        <div style="
+            padding: 10px 14px;
+            border-radius: 8px;
+            background: ${p.colore}22;
+            border-left: 5px solid ${p.colore};
+            color: #1F2937;
+            font-size: 15px;
+            font-weight: 500;
+        ">
+            Livello di rischio assicurativo: <strong>${p.livello}</strong>
+        </div>
+    `;
+}
+
+// ========================================================
+// CALCOLA PRIORITÀ ASSICURATIVA (Urgente / Media / Lieve)
+// ========================================================
+function calcolaPrioritaAssicurativa(gapList) {
+    const n = gapList.length;
+
+    if (n === 0) {
+        return { livello: "Nessun rischio rilevante", colore: "green" };
+    }
+    if (n <= 2) {
+        return { livello: "Rischio Lieve", colore: "goldenrod" };
+    }
+    if (n <= 5) {
+        return { livello: "Priorità Media", colore: "darkorange" };
+    }
+    return { livello: "Situazione Urgente", colore: "#d71920" };
+}
+// =============================
+//   POLIZZE - ATTIVA CARD
+// =============================
+
+// Rende tutta la card cliccabile
+document.querySelectorAll(".polizza-card").forEach(card => {
+    card.addEventListener("click", () => {
+
+        const checkbox = card.querySelector("input");
+
+        // Inverte stato del checkbox
+        checkbox.checked = !checkbox.checked;
+
+        // Applica o rimuove la classe selezionata
+        if (checkbox.checked) {
+            card.classList.add("selected");
+        } else {
+            card.classList.remove("selected");
+        }
+
+    });
+});
+
+// Raccoglie le polizze selezionate
+function raccogliPolizzeAttive() {
+    const checks = document.querySelectorAll(".chk-polizza");
+    const attive = [];
+
+    checks.forEach(c => {
+        if (c.checked) attive.push(c.value);
+    });
+
+    return attive;
+}
+
+function generaIncongruenzeNelReport(data) {
+    // Prepara struttura dati corretta per l'engine premium
+    const datiCompleti = {
+        // Dati aziendali "spiattellati" a livello root
+        ...(data.azienda || {}),
+
+        // Risposte indicizzate per codice domanda
+        risposteByCodice: {},
+
+        // Punteggi per area (per gap analysis)
+        areePunteggio: data.areePunteggio || {},
+
+        // Polizze attive dichiarate
+        polizze: (data.azienda && Array.isArray(data.azienda.polizzeAttive))
+            ? data.azienda.polizzeAttive
+            : []
+    };
+
+    // Mappa le risposte nel formato { CODICE: valore }
+    if (data.risposte && Array.isArray(data.risposte)) {
+        data.risposte.forEach(r => {
+            if (r.id) {
+                datiCompleti.risposteByCodice[r.id] = r.valore;
+            }
+            if (r.codice) {
+                datiCompleti.risposteByCodice[r.codice] = r.valore;
+            }
+        });
+    }
+
+    // Gap scores per area (quanto manca per arrivare al massimo "5")
+    if (data.areePunteggio) {
+        datiCompleti.gapScores = {};
+        Object.keys(data.areePunteggio).forEach(area => {
+            const score = data.areePunteggio[area];
+            datiCompleti.gapScores[area] = Math.max(0, 5 - score);
+        });
+    }
+
+    // Chiama la versione premium che disegna le card
+    generaIncongruenzePremium(datiCompleti);
+}
+
+
+function generaIncongruenze(data) {
+    generaIncongruenzeNelReport(data);
+}
+function calcolaPrioritaPolizze(data) {
+    if (!data || !data.areePunteggio || !data.azienda) return [];
+
+    const polizzeAttive = data.azienda.polizzeAttive || [];
+    const punteggiAree = data.areePunteggio;
+    const scoring = data.scoringCommerciale || {};
+
+    const risultato = [];
+
+    // Normalizzo gli assi di SCORTEX a 0–1
+    const assi = {
+        PERSONE: (scoring.PERSONE || 0) / 100,
+        PATRIMONIO: (scoring.PATRIMONIO || 0) / 100,
+        RESP: (scoring.RESP || 0) / 100,
+        CONTINUITA: (scoring.CONTINUITA || 0) / 100
+    };
+
+    // Mappa polizza → asse di rischio prevalente
+    const mappaAssePolizza = {
+        incendio: "PATRIMONIO",
+        trasporti: "PATRIMONIO",
+
+        rcg: "RESP",
+        tutela_legale: "RESP",
+
+        infortuni_titolare: "PERSONE",
+        keyman: "PERSONE",
+        vita_tcm: "PERSONE",
+        sanitaria: "PERSONE",
+
+        cyber: "CONTINUITA",
+        credito: "CONTINUITA"
+    };
+
+    // Per ogni polizza della configurazione
+    Object.keys(PRODOTTI_CONFIG.mappaPolizze).forEach(polizza => {
+
+        // Se la polizza è già attiva, salta (nessuna priorità)
+        if (polizzeAttive.includes(polizza)) return;
+
+        const famiglia = PRODOTTI_CONFIG.mappaPolizze[polizza];
+        const pesoFamiglia = PRODOTTI_CONFIG.famiglie[famiglia]?.pesoBase || 1;
+
+        // Usa l'area più debole come driver tecnico
+        const areaPeggiore = Object.keys(punteggiAree).length
+            ? Object.keys(punteggiAree)
+                .reduce((min, k) => punteggiAree[k] < min ? punteggiAree[k] : min, 10)
+            : 10;
+
+        const criticitaArea = (10 - areaPeggiore) / 10; // 0–1
+
+        // Asse di rischio commerciale specifico per quella polizza
+        const asse = mappaAssePolizza[polizza] || null;
+        const scoreAsse = asse ? (assi[asse] || 0) : 0;
+
+        // Fattore commerciale: tra 0.6 e 1.0 circa
+        const fattoreCommerciale = 0.6 + 0.4 * scoreAsse;
+
+        const punteggioPriorita = criticitaArea * pesoFamiglia * fattoreCommerciale; // 0–1+
+
+        risultato.push({
+            polizza,
+            famiglia,
+            priorita: +punteggioPriorita.toFixed(3)
+        });
+    });
+
+    // Ordina dalla più urgente alla meno urgente
+    return risultato.sort((a, b) => b.priorita - a.priorita);
+}
+
+function classificaPrioritaProdotto(p) {
+    if (p > 0.66) return { livello: "🔴 Urgente", colore: "#b91c1c" };
+    if (p > 0.33) return { livello: "🟠 Priorità Media", colore: "#ea580c" };
+    return { livello: "🟡 Bassa Priorità", colore: "#ca8a04" };
+}
+function renderPrioritaProdotti(data) {
+    try {
+        const container = document.getElementById("prioritaProdottiList");
+        if (!container) {
+            console.warn("⚠ prioritaProdottiList non trovato nel DOM.");
+            return;
+        }
+
+        container.innerHTML = "";
+
+        const lista = data.prioritaProdotti || [];
+        const gap = data.gapAssicurativo || [];
+        const azienda = data.azienda || {};
+        const scoring = data.scoringCommerciale || null;
+
+        const fatturato = Number(azienda.fatturato || 0);
+        const dip = Number(azienda.dipendenti || 0);
+
+        const formatEuro = (v) => {
+            if (!v || v <= 0 || !isFinite(v)) return "—";
+            return "€ " + Math.round(v).toLocaleString("it-IT");
+        };
+
+        // Cluster dimensionale
+        const getCluster = () => {
+            if (fatturato > 5000000 || dip > 50) return "large";
+            if (fatturato > 1000000 || dip > 20) return "medium";
+            if (fatturato > 250000 || dip > 5) return "small";
+            return "micro";
+        };
+
+        const cluster = getCluster();
+
+        // Stima rischio + premio per polizza / cluster
+        function stimaRischioEPremio(polizza) {
+            const tabelle = {
+                incendio: {
+                    micro: { rischio: [100000, 300000], premio: [400, 900] },
+                    small: { rischio: [300000, 800000], premio: [700, 1500] },
+                    medium: { rischio: [800000, 2000000], premio: [1200, 3000] },
+                    large: { rischio: [2000000, 5000000], premio: [2500, 6000] }
+                },
+                rcg: {
+                    micro: { rischio: [200000, 500000], premio: [300, 700] },
+                    small: { rischio: [500000, 1500000], premio: [600, 1200] },
+                    medium: { rischio: [1500000, 3000000], premio: [1000, 2500] },
+                    large: { rischio: [3000000, 5000000], premio: [2000, 5000] }
+                },
+                infortuni_titolare: {
+                    micro: { rischio: [30000, 100000], premio: [250, 600] },
+                    small: { rischio: [50000, 150000], premio: [400, 800] },
+                    medium: { rischio: [100000, 250000], premio: [600, 1200] },
+                    large: { rischio: [150000, 400000], premio: [900, 1800] }
+                },
+                keyman: {
+                    micro: { rischio: [100000, 300000], premio: [400, 900] },
+                    small: { rischio: [250000, 750000], premio: [700, 1500] },
+                    medium: { rischio: [500000, 1500000], premio: [1200, 2500] },
+                    large: { rischio: [1000000, 3000000], premio: [2000, 4500] }
+                },
+                vita_tcm: {
+                    micro: { rischio: [100000, 300000], premio: [300, 800] },
+                    small: { rischio: [250000, 750000], premio: [600, 1400] },
+                    medium: { rischio: [500000, 1500000], premio: [1000, 2300] },
+                    large: { rischio: [1000000, 3000000], premio: [1800, 4200] }
+                },
+                sanitaria: {
+                    micro: { rischio: [10000, 50000], premio: [300, 800] },
+                    small: { rischio: [30000, 100000], premio: [600, 1500] },
+                    medium: { rischio: [60000, 200000], premio: [1200, 3500] },
+                    large: { rischio: [100000, 400000], premio: [2500, 7000] }
+                },
+                cyber: {
+                    micro: { rischio: [50000, 200000], premio: [300, 900] },
+                    small: { rischio: [100000, 400000], premio: [600, 1500] },
+                    medium: { rischio: [200000, 800000], premio: [900, 2500] },
+                    large: { rischio: [400000, 1500000], premio: [1800, 6000] }
+                },
+                tutela_legale: {
+                    micro: { rischio: [10000, 50000], premio: [200, 500] },
+                    small: { rischio: [20000, 80000], premio: [300, 700] },
+                    medium: { rischio: [50000, 150000], premio: [500, 1200] },
+                    large: { rischio: [80000, 250000], premio: [800, 2000] }
+                },
+                trasporti: {
+                    micro: { rischio: [50000, 200000], premio: [300, 900] },
+                    small: { rischio: [100000, 400000], premio: [600, 1500] },
+                    medium: { rischio: [200000, 800000], premio: [1000, 2500] },
+                    large: { rischio: [400000, 1500000], premio: [2000, 6000] }
+                },
+                credito: {
+                    micro: { rischio: [50000, 200000], premio: [800, 2000] },
+                    small: { rischio: [150000, 600000], premio: [1500, 4000] },
+                    medium: { rischio: [400000, 1500000], premio: [3000, 9000] },
+                    large: { rischio: [1000000, 5000000], premio: [8000, 25000] }
+                }
+            };
+
+            const tab = tabelle[polizza];
+            if (!tab) return null;
+            const row = tab[cluster] || tab.micro;
+            return {
+                rischioMin: row.rischio[0],
+                rischioMax: row.rischio[1],
+                premioMin: row.premio[0],
+                premioMax: row.premio[1]
+            };
+        }
+
+        if (!lista.length) {
+            container.innerHTML = `
+                <p style="font-size:13px; color:#6b7280; margin:0;">
+                    Nessuna priorità specifica calcolata sulle singole coperture.
+                    Verifica le polizze mancanti e ripeti l’analisi.
+                </p>
+            `;
+            return;
+        }
+
+        // 🔎 Considero SOLO le coperture effettivamente mancanti
+        const listaFiltrata = lista.filter(item => gap.includes(item.polizza));
+
+        if (!listaFiltrata.length) {
+            container.innerHTML = `
+                <p style="font-size:13px; color:#6b7280; margin:0;">
+                    Tutte le coperture principali risultano già presenti. 
+                    Nessuna priorità di attivazione immediata rilevata.
+                </p>
+            `;
+            return;
+        }
+
+        // ✅ TOP 3 COPERTURE
+        const top3 = listaFiltrata.slice(0, 3);
+
+        const nomiPolizze = {
+            incendio: "Incendio / Property aziendale",
+            rcg: "Responsabilità Civile verso Terzi e Operai (RCT/RCO)",
+            infortuni_titolare: "Infortuni Titolare / Soci",
+            keyman: "Key Man / Uomo Chiave",
+            vita_tcm: "Tutela Vita / TCM Soci / Garanti",
+            sanitaria: "Sanitaria e Welfare",
+            cyber: "Protezione Cyber Risk",
+            tutela_legale: "Tutela Legale Azienda",
+            trasporti: "Merci Trasportate / Trasporti",
+            credito: "Assicurazione del Credito Commerciale"
+        };
+
+        const motivazioni = {
+            incendio: "Il patrimonio fisico (locali, beni, attrezzature) non risulta adeguatamente protetto. Un sinistro importante può bloccare l’operatività e generare perdite non sostenibili.",
+            rcg: "L’azienda è esposta a richieste di risarcimento da parte di clienti, fornitori e dipendenti. Una condanna importante può erodere il patrimonio dell’imprenditore.",
+            infortuni_titolare: "La figura del titolare è centrale. Un infortunio serio blocca reddito personale e continuità dell’azienda, senza un paracadute economico.",
+            keyman: "L’azienda dipende da poche persone chiave. La loro assenza improvvisa avrebbe un impatto diretto su fatturato, clienti e stabilità.",
+            vita_tcm: "In caso di decesso di soci o garanti i debiti aziendali e personali ricadono su famiglia ed eredi. Serve una protezione chiara su mutui, fidi e garanzie.",
+            sanitaria: "Il capitale umano è critico e l’assenteismo per motivi di salute ha impatto diretto sulla produttività. Un welfare minimo stabilizza il team.",
+            cyber: "I processi aziendali passano ormai da sistemi digitali. Un attacco informatico può fermare l’attività, generare danni reputazionali e costi legali.",
+            tutela_legale: "Aumenti di contenziosi con clienti, fornitori, dipendenti o PA possono generare costi legali ricorrenti. La difesa va resa sostenibile.",
+            trasporti: "Le merci in viaggio rappresentano fatturato in movimento. Danni o furti impattano direttamente margine e relazione con i clienti.",
+            credito: "L’azienda è esposta a pochi clienti rilevanti e a dilazioni di pagamento. Un insoluto importante impatta cassa e investimenti futuri."
+        };
+
+        // Titolo sintetico
+        const header = document.createElement("div");
+        header.style.marginBottom = "8px";
+        header.innerHTML = `
+            <p style="font-size:13px; color:#374151; margin:0 0 6px 0;">
+                Di seguito le <strong>3 coperture da attivare per prime</strong>, in funzione
+                del profilo di rischio emerso e delle polizze oggi mancanti.
+            </p>
+        `;
+        container.appendChild(header);
+
+        top3.forEach((item, index) => {
+            const meta = classificaPrioritaProdotto(item.priorita);
+            const nome = nomiPolizze[item.polizza] || item.polizza.toUpperCase();
+            const motivo = motivazioni[item.polizza] || "Copertura chiave per ridurre l’esposizione economica e stabilizzare la continuità aziendale.";
+            const stima = stimaRischioEPremio(item.polizza);
+
+            const card = document.createElement("div");
+            card.className = "priorita-prodotto-card";
+            card.style.marginBottom = "10px";
+            card.style.padding = "10px 12px";
+            card.style.borderRadius = "10px";
+            card.style.background = "#F9FAFB";
+            card.style.borderLeft = `4px solid ${meta.colore}`;
+            card.style.display = "flex";
+            card.style.flexDirection = "column";
+            card.style.gap = "4px";
+
+            card.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div style="font-size:14px; font-weight:600; color:#111827;">
+                        ${index + 1}. ${nome}
+                    </div>
+                    <span style="
+                        font-size:11px;
+                        padding:2px 8px;
+                        border-radius:999px;
+                        background:${meta.colore}22;
+                        color:${meta.colore};
+                        font-weight:600;
+                    ">
+                        ${meta.livello}
+                    </span>
+                </div>
+                <div style="font-size:12px; color:#4B5563;">
+                    Famiglia rischio: <strong>${item.famiglia}</strong>
+                </div>
+                <div style="font-size:12px; color:#374151; margin-top:4px;">
+                    <strong>Perché adesso:</strong> ${motivo}
+                </div>
+                <div style="font-size:11px; color:#6B7280; margin-top:2px;">
+                    Punteggio priorità: ${(item.priorita * 100).toFixed(0)}/100
+                </div>
+                ${
+                    stima
+                        ? `
+                <div style="font-size:11px; color:#111827; margin-top:4px;">
+                    <strong>Impatto economico potenziale:</strong>
+                    ~${formatEuro(stima.rischioMin)} – ${formatEuro(stima.rischioMax)}
+                </div>
+                <div style="font-size:11px; color:#111827;">
+                    <strong>Ordine di grandezza premio annuo:</strong>
+                    ~${formatEuro(stima.premioMin)} – ${formatEuro(stima.premioMax)}
+                </div>
+                `
+                        : ""
+                }
+            `;
+
+            container.appendChild(card);
+        });
+    } catch (e) {
+        console.error("Errore in renderPrioritaProdotti:", e);
+    }
+}
+
+
+console.log("INDEX PREMIUM READY");
+</script>
+
+<!-- ============================
+     MOTORE DI SCORING COMMERCIALE
+     ============================ -->
+<script>
+window.SCORTEX = {
+    /**
+     * azienda: oggetto restituito da raccogliDatiAzienda()
+     * risposteByCodice: es. { HRW_01: 2, CYB_01: 3, ... }
+     * incongruenze: per ora non lo usiamo (potenziale futuro)
+     * polizzeAttive: array di id polizza es. ["incendio","rcg","cyber"]
+     */
+    calcolaScore: function (azienda, risposteByCodice, incongruenze, polizzeAttive) {
+        const score = { PERSONE: 0, PATRIMONIO: 0, RESP: 0, CONTINUITA: 0, GLOBALE: 0 };
+
+        const fatturato = Number(azienda.fatturato || 0);
+        const dip = Number(azienda.dipendenti || 0);
+        const settore = (azienda.settore || "").toLowerCase();
+        const tipoStruttura = (azienda.tipoStruttura || "").toLowerCase();
+        const fabbricato = (azienda.fabbricatoProprieta || "").toLowerCase();
+        const valoreBeni = Number(azienda.valoreBeni || 0);
+        const r = risposteByCodice || {};
+        const polizze = Array.isArray(polizzeAttive) ? polizzeAttive : [];
+
+        // ============= PERSONE (KEYMAN / TCM / INFORTUNI / SANITARIA)
+        // Micro-aziende con 1 persona = forte rischio persona
+        if (dip <= 5 && dip >= 1) score.PERSONE += 15;
+
+        // HRW_01: dipendenza da figure chiave (più è basso, più è grave)
+        if (r.HRW_01) {
+            const v = Number(r.HRW_01);
+            if (v <= 2) score.PERSONE += 25;   // dipendenza molto alta
+            else if (v === 3) score.PERSONE += 15;
+            else if (v === 4) score.PERSONE += 5;
+        }
+
+        // ============= PATRIMONIO (BENI / INCENDIO / PROPERTY)
+        if (fabbricato === "si") score.PATRIMONIO += 25;
+        if (valoreBeni > 0) score.PATRIMONIO += 15;
+        if (tipoStruttura.includes("produzione") || tipoStruttura.includes("magazz")) {
+            score.PATRIMONIO += 10;
+        }
+        if (fatturato > 1000000) score.PATRIMONIO += 10;
+
+        // ============= RESPONSABILITÀ (RC / TUTELA LEGALE)
+        if (["servizi", "commercio"].includes(settore)) {
+            score.RESP += 15;
+        }
+
+        // Legal & compliance bassa (LEGAL_01 valori bassi = rischio)
+        if (r.LEGAL_01) {
+            const v = Number(r.LEGAL_01);
+            if (v <= 2) score.RESP += 15;
+            else if (v === 3) score.RESP += 8;
+        }
+
+        // Sicurezza sul lavoro critica (HR_08 / ESG_04)
+        if (r.HR_08 && Number(r.HR_08) <= 2) score.RESP += 10;
+        if (r.ESG_04 && Number(r.ESG_04) <= 2) score.RESP += 10;
+
+        // ============= CONTINUITÀ & DIGITAL (CYBER / BI)
+        // Business continuity bassa
+        if (r.SC_05 && Number(r.SC_05) <= 2) score.CONTINUITA += 20;
+
+        // Cyber poco presidiato
+        ["CYB_01", "CYB_02", "CYB_10"].forEach(cod => {
+            if (r[cod] && Number(r[cod]) <= 2) {
+                score.CONTINUITA += 8;
+            }
+        });
+
+        if (settore.includes("tecnolog")) {
+            score.CONTINUITA += 10;
+        }
+
+        // ============= PENALITÀ PER COPERTURE GIÀ ESISTENTI
+        if (polizze.includes("incendio")) score.PATRIMONIO -= 20;
+        if (polizze.includes("cyber")) score.CONTINUITA -= 15;
+        if (polizze.includes("rcg")) score.RESP -= 15;
+        if (polizze.includes("keyman") || polizze.includes("vita_tcm")) score.PERSONE -= 20;
+
+        // Clamp minimo 0
+        ["PERSONE", "PATRIMONIO", "RESP", "CONTINUITA"].forEach(k => {
+            if (score[k] < 0) score[k] = 0;
+            if (score[k] > 100) score[k] = 100;
+        });
+
+        score.GLOBALE = Math.round(
+            (score.PERSONE + score.PATRIMONIO + score.RESP + score.CONTINUITA) / 4
+        );
+
+        return score;
+    }
+};
+</script>
+
+</body>
+</html>
+

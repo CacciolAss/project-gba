@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Accesso — CRM Offline</title>
+
+  <link rel="stylesheet" href="./style.css">
+
+  <style>
+    :root{
+      --g-red:#c8102e;
+      --g-red-dark:#9f0c24;
+      --g-blue:#005aa7;
+      --bg:#f5f6f8;
+      --card:#ffffff;
+      --text:#111;
+      --muted:#555;
+      --border:rgba(0,0,0,.12);
+      --shadow:0 10px 30px rgba(0,0,0,.10);
+      --radius:16px;
+    }
+
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    }
+
+    .wrap{
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+    }
+
+    .card{
+      width:min(520px, 100%);
+      background:var(--card);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      border:1px solid var(--border);
+      overflow:hidden;
+    }
+
+    .top{
+      padding:18px 20px;
+      background:linear-gradient(135deg, var(--g-red), var(--g-red-dark));
+      color:#fff;
+    }
+
+    .top h1{
+      margin:0;
+      font-size:18px;
+    }
+
+    .top p{
+      margin:8px 0 0;
+      font-size:13px;
+      opacity:.9;
+    }
+
+    .body{
+      padding:18px 20px 20px;
+    }
+
+    label{
+      display:block;
+      font-size:12px;
+      color:var(--muted);
+      margin:12px 0 6px;
+    }
+
+    input{
+      width:100%;
+      padding:12px;
+      border-radius:12px;
+      border:2px solid #ccc;
+      font-size:15px;
+      outline:none;
+    }
+
+    input:focus{
+      border-color:var(--g-blue);
+    }
+
+    .btn{
+      width:100%;
+      margin-top:16px;
+      min-height:46px;
+      border-radius:12px;
+      border:2px solid var(--g-red);
+      background:var(--g-red);
+      color:#fff;
+      font-size:15px;
+      font-weight:600;
+      cursor:pointer;
+    }
+
+    .btn:hover{
+      background:var(--g-red-dark);
+      border-color:var(--g-red-dark);
+    }
+
+    .error{
+      margin-top:10px;
+      font-size:13px;
+      color:#b00020;
+      display:none;
+    }
+
+    .meta{
+      margin-top:12px;
+      font-size:12px;
+      color:var(--muted);
+    }
+
+    .footer{
+      padding:14px 20px;
+      border-top:1px solid var(--border);
+      display:flex;
+      justify-content:space-between;
+      font-size:12px;
+    }
+
+    .link{
+      color:var(--g-blue);
+      text-decoration:none;
+      cursor:pointer;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="top">
+        <h1>Accesso CRM Offline</h1>
+        <p>Sessione unica per CRM / Persona / Azienda</p>
+      </div>
+
+      <div class="body">
+        <label for="userInput">Nome e Cognome</label>
+        <input
+          id="userInput"
+          type="text"
+          placeholder="Es. GIACOMELLI ALESSIO"
+          autocomplete="off"
+        />
+
+        <div id="err" class="error">Consulente non riconosciuto.</div>
+
+        <button class="btn" id="btnLogin">Entra</button>
+
+        <div class="meta">
+          Il ruolo viene assegnato automaticamente in base all’anagrafica.
+        </div>
+      </div>
+
+      <div class="footer">
+        <span class="link" id="btnClear">Pulisci sessione</span>
+        <span class="link" id="btnBack">Torna al CRM</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- DEPENDENCIES -->
+  <script src="./session_global.js"></script>
+  <script src="./consulenti.js"></script>
+
+  <script>
+    (function(){
+      const $ = (id) => document.getElementById(id);
+
+      const canon = (v) =>
+        (v ?? "")
+          .toString()
+          .trim()
+          .toUpperCase()
+          .replace(/\s+/g, " ");
+
+      const roleMap = (ruoloRaw) => {
+        const r = ruoloRaw.toUpperCase();
+        if (r.includes("GENERAL MANAGER")) return "GENERAL MANAGER";
+        if (r.includes("DIRETTORE")) return "MANAGER";
+        if (r.includes("AREA MANAGER")) return "MANAGER";
+        if (r.includes("TEAM LEADER")) return "TEAM_LEADER";
+        if (r.includes("HR")) return "HR";
+        if (r.includes("AGENTE")) return "AGENTE";
+        if (r.includes("SOCIO")) return "ADMIN";
+        return "CONSULENTE";
+      };
+
+      const qs = new URLSearchParams(location.search);
+      const target =
+        qs.get("target") ||
+        localStorage.getItem("gba_last_target") ||
+        "../crm/CRM.html";
+
+      const existing = window.GBA_SESSION.get();
+      if (existing) {
+        location.href = target;
+        return;
+      }
+
+      $("btnBack").onclick = () => location.href = target;
+      $("btnClear").onclick = () => window.GBA_SESSION.clear();
+
+      $("btnLogin").onclick = () => {
+        const raw = $("userInput").value;
+        const search = canon(raw);
+
+        const found = window.CONSULENTI_GENERALI.find(c => {
+          const a = canon(c.nome + " " + c.cognome);
+          const b = canon(c.cognome + " " + c.nome);
+          return a === search || b === search;
+        });
+
+        if (!found) {
+          $("err").style.display = "block";
+          return;
+        }
+
+        $("err").style.display = "none";
+
+        const role = roleMap(found.ruolo);
+
+        window.GBA_SESSION.set({
+          userId: `${found.cognome} ${found.nome}`,
+          displayName: `${found.nome} ${found.cognome}`,
+          role
+        });
+
+        location.href = target;
+      };
+
+      $("userInput").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") $("btnLogin").click();
+      });
+    })();
+  </script>
+</body>
+</html>

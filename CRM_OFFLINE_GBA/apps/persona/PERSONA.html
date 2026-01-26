@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8" />
+    <title>Generali Business Advisor - Persona</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- CSS (da shared) -->
+<link rel="stylesheet" href="../../shared/style.css" />
+<link rel="stylesheet" href="../azienda/incongruenze-premium.css" />
+
+<!-- Librerie JS comuni (da shared) -->
+<script src="../../shared/xlsx.full.min.js"></script>
+<script src="../../shared/chart.min.js"></script>
+<script src="../../shared/consulenti.js"></script>
+<script src="../../shared/comuni.js"></script>
+<script src="../../shared/catasto_comuni.js"></script>
+
+<!-- Sessione unica -->
+<script src="../../shared/session_global.js"></script>
+
+
+    <!-- Stili extra (copiati dall'INDEX per mantenere lo stesso look & feel) -->
+    <style>
+        /* Qualche piccolo ritocco estetico, senza rompere il tuo style.css */
+
+        body {
+            background: radial-gradient(circle at top, #fdf2f2 0, #ffffff 45%, #f5f5f5 100%);
+        }
+
+        .login-logo {
+            font-size: 42px;
+            font-weight: 800;
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #111827;
+            color: #fef2f2;
+            margin: 0 auto 12px auto;
+            box-shadow: 0 12px 30px rgba(15,23,42,0.45);
+        }
+
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15,23,42,0.80);
+            backdrop-filter: blur(10px);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-box {
+            background: #f9fafb;
+            padding: 26px 26px 24px;
+            border-radius: 24px;
+            max-width: 380px;
+            width: 94%;
+            box-shadow: 0 26px 80px rgba(0,0,0,0.50);
+            border: 1px solid rgba(255,255,255,0.35);
+        }
+
+        .login-box h2 {
+            text-align: center;
+            margin: 0 0 4px 0;
+            font-size: 22px;
+            letter-spacing: 0.04em;
+        }
+
+        .login-sub {
+            text-align: center;
+            margin: 0 0 18px 0;
+            font-size: 13px;
+            color: #6b7280;
+        }
+
+        .login-box label {
+            font-size: 13px;
+            display: block;
+            margin-bottom: 4px;
+            color: #374151;
+        }
+
+        .login-box input {
+            width: 100%;
+            padding: 9px 11px;
+            border-radius: 999px;
+            border: 1px solid #d1d5db;
+            margin-bottom: 10px;
+            font-size: 13px;
+            background: #f9fafb;
+        }
+
+        .login-box input:focus {
+            outline: none;
+            border-color: #d71920;
+            box-shadow: 0 0 0 2px rgba(215, 25, 32, 0.15);
+            background: #ffffff;
+        }
+
+        .login-btn {
+            width: 100%;
+            margin-top: 4px;
+        }
+
+        #toastContainer {
+            position: fixed;
+            top: 18px;
+            right: 18px;
+            z-index: 9999;
+        }
+
+        .toast {
+            background: #111827;
+            color: #fff;
+            padding: 10px 14px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            font-size: 13px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: all 0.22s ease-out;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .toast-success {
+            border-left: 4px solid #16a34a;
+        }
+
+        .toast-warning {
+            border-left: 4px solid #eab308;
+        }
+
+        .toast-error {
+            border-left: 4px solid #dc2626;
+        }
+
+        /* Layout principale, come azienda */
+
+        #mainContainer {
+            min-height: 100vh;
+            padding: 26px 14px 36px;
+        }
+
+        .container {
+            max-width: 1180px;
+            margin: 0 auto;
+        }
+
+        .page-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 22px;
+        }
+
+        .page-header-title {
+            font-size: 26px;
+            margin: 0 0 4px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .page-header-sub {
+            margin: 0;
+            font-size: 13px;
+            color: #6b7280;
+        }
+
+        .badge-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: rgba(215, 25, 32, 0.08);
+            color: #991b1b;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        /* CARD di sezione */
+
+        .section-card {
+            background: var(--card-bg);
+            border-radius: 22px;
+            padding: 22px 20px 24px;
+            margin-bottom: 18px;
+            box-shadow: 0 16px 34px rgba(215, 25, 32, 0.55);
+            border: 1px solid rgba(255, 255, 255, 0.7);
+        }
+
+        .section-card h2 {
+            margin: 0 0 12px 0;
+            font-size: 22px;
+        }
+
+        .section-card h3 {
+            margin: 0 0 10px 0;
+            font-size: 16px;
+        }
+
+        .pill-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 3px 8px;
+            border-radius: 999px;
+            background: rgba(15, 23, 42, 0.06);
+            font-size: 11px;
+            margin-left: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        /* Griglia form anagrafica */
+
+        .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    column-gap: 24px;
+    row-gap: 14px;
+    align-items: flex-start;
+}
+
+/* Etichetta sopra i campi */
+.section-card label {
+    display: block;
+    font-size: 13px;
+    margin-bottom: 4px;
+    font-weight: 500;
+    color: #374151;
+}
+
+/* Campi input / select “a pillola”, coerenti con il box Archivio */
+.section-card input,
+.section-card select {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px 14px !important;
+    border-radius: 999px !important;
+    border: 1px solid #e5e7eb !important;
+    background: #ffffff !important;
+    font-size: 14px;
+    line-height: 1.3;
+    color: #111827;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    outline: none;
+}
+
+/* Placeholder più “soft” */
+.section-card input::placeholder {
+    color: #9ca3af;
+    font-size: 13px;
+}
+
+/* Stato focus, allineato al rosso Generali */
+.section-card input:focus,
+.section-card select:focus {
+    border-color: var(--rosso) !important;
+    box-shadow:
+        0 0 0 1px rgba(185, 28, 28, 0.55),
+        0 0 0 4px rgba(248, 113, 113, 0.25);
+    background: #ffffff !important;
+}
+
+
+        /* Domande premium (pulsanti risposta) */
+
+        .domanda-block {
+            margin-bottom: 32px;
+            padding-bottom: 22px;
+            border-bottom: 1px solid #E4E4E4;
+        }
+
+        .domanda-titolo {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .domanda-descr {
+            font-size: 13px;
+            color: #6b7280;
+            margin-bottom: 12px;
+        }
+
+        .risposte-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .btn-opzione {
+            flex: 0 0 auto;
+            border-radius: 999px;
+            border: 1px solid #D1D5DB;
+            padding: 7px 14px;
+            font-size: 13px;
+            background: #F9FAFB;
+            cursor: pointer;
+            transition: all 0.18s ease-out;
+        }
+
+        .btn-opzione:hover {
+            border-color: #9ca3af;
+            background: #F3F4F6;
+        }
+
+        .btn-opzione.selected {
+            background: linear-gradient(135deg, #d71920, #991b1b);
+            color: white;
+            border-color: #b91c1c;
+            box-shadow: 0 10px 22px rgba(185, 28, 28, 0.50);
+        }
+
+        /* Pulsanti navigazione questionario */
+
+        .questionario-nav {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 18px;
+            gap: 10px;
+        }
+
+        .questionario-nav .btn {
+            flex: 1;
+        }
+
+        /* Risultati */
+
+        .risultati-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+            gap: 18px;
+        }
+
+        @media (max-width: 960px) {
+            .risultati-grid {
+                grid-template-columns: minmax(0, 1fr);
+            }
+        }
+
+        .area-score-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .area-score-card {
+            flex: 1 1 230px;
+            border-radius: 12px;
+            padding: 14px 16px;
+            background: #fafafa;
+            border: 1px solid #e4e4e4;
+        }
+
+        .area-score-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .area-score-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: #b91c1c;
+        }
+
+        .area-score-sub {
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+    </style>
+</head>
+<body>
+
+<!-- ===========================
+     LOGIN OVERLAY
+=========================== -->
+<div id="loginOverlay" class="overlay">
+    <div class="login-box">
+        <div class="login-logo">G</div>
+        <h2>Generali Business Advisor - Persona</h2>
+        <p class="login-sub">Accesso consulenti</p>
+
+        <label>Username</label>
+        <input type="text" id="loginUser" placeholder="nome cognome" />
+
+        <label>Password</label>
+        <input type="password" id="loginPass" placeholder="password" />
+
+        <button class="btn login-btn" id="btnLogin">Entra</button>
+
+    </div>
+</div>
+
+<div id="toastContainer"></div>
+
+<!-- ===========================
+     LAYOUT PRINCIPALE PERSONA
+=========================== -->
+<div id="mainContentPersona" style="display:none;">
+    <div class="container">
+
+
+        <!-- HEADER PAGINA -->
+        <div class="page-header">
+            <div>
+
+<h1 class="page-header-title">
+  👤 Analisi Persona
+  <span id="selectedClientBadge" class="pill-badge" style="display:none;"></span>
+</h1>
+
+<p class="page-header-sub">
+  Analisi dei bisogni della persona e della famiglia, con individuazione delle priorità di protezione.
+</p>
+
+            </div>
+        </div>
+
+        <!-- ARCHIVIO ANALISI PERSONA -->
+        <div class="section-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:8px;">
+                <h2 style="margin:0;">
+                    📁 Analisi salvate
+                    <span class="pill-badge">Storico</span>
+                </h2>
+
+                <button id="nuovaAnalisiPersona"
+                    class="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700">
+                    + Nuova Analisi Persona
+                </button>
+            </div>
+
+            <p style="font-size:13px; color:#6b7280; margin-bottom:12px;">
+                Consulta, confronta o riprendi le analisi già effettuate sui clienti.
+            </p>
+
+            <div class="form-grid">
+                <div>
+                    <label>Cerca per Codice Fiscale</label>
+                    <input type="text" id="searchCF" placeholder="Es: RSSMRA80A01H501Z" />
+                </div>
+                <div>
+                    <label>Filtro per consulente</label>
+                    <select id="searchConsulente">
+                        <option value="">Tutti</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="margin-top:14px; font-size:13px; color:#6b7280;">
+                <em>
+                    Usa i filtri per restringere le analisi per codice fiscale o per consulente.
+                    Clicca su una riga per ricaricare i risultati corrispondenti.
+                </em>
+            </div>
+
+            <div id="archivioPersonaContainer" style="margin-top:16px;">
+                <p style="font-size:13px; color:#9ca3af;">
+                    Nessuna analisi caricata. Verranno mostrate qui dopo il salvataggio.
+                </p>
+            </div>
+        </div>
+
+
+                <div>
+                            <!-- ANAGRAFICA PERSONA -->
+<div class="section-card" id="anagraficaPersonaSection">
+    <h2>
+        Anagrafica Persona
+        <span class="pill-badge">Step 1</span>
+    </h2>
+
+    <p style="font-size:13px; color:#6b7280; margin-bottom:12px;">
+        Compila i dati essenziali della persona. Servono per il gap statale, il normotipo e la definizione
+        delle priorità di protezione e investimento.
+    </p>
+
+    <div class="form-grid">
+        <div>
+            <label>Nome</label>
+            <input type="text" id="nome" placeholder="Inserisci nome" />
+        </div>
+
+        <div>
+            <label>Cognome</label>
+            <input type="text" id="cognome" placeholder="Inserisci cognome" />
+        </div>
+
+        <div>
+            <label>Codice Fiscale</label>
+            <input type="text" id="codiceFiscale" maxlength="16" placeholder="16 caratteri" />
+        </div>
+
+                <div>
+            <label>Data di nascita</label>
+            <input type="date" id="dataNascita" />
+        </div>
+
+        <div>
+            <label>Luogo di nascita</label>
+            <input type="text" id="luogoNascita" placeholder="Es: Prato" />
+        </div>
+
+        <div>
+            <label>Età</label>
+            <input type="number" id="eta" min="0" placeholder="Calcolata" />
+        </div>
+
+        <div>
+           <label>Sesso</label>
+           <input type="text" id="sesso" placeholder="Da Codice Fiscale" readonly />
+        </div>
+
+                <div>
+                    <label>Professione</label>
+                    <input type="text" id="professione" placeholder="Es: Imprenditore, Dipendente..." />
+                </div>
+
+                <div>
+                    <label>Situazione lavorativa</label>
+                    <select id="situazioneLavorativa">
+                        <option value="">Seleziona...</option>
+                        <option value="dipendente">Dipendente</option>
+                        <option value="autonomo">Lavoratore autonomo</option>
+                        <option value="imprenditore">Imprenditore</option>
+                        <option value="dirigente">Dirigente / Quadro</option>
+                        <option value="pensionato">Pensionato</option>
+                        <option value="altro">Altro</option>
+                    </select>
+                </div>
+
+               <div>
+    <label>Reddito annuo lordo</label>
+    <input type="text" id="redditoAnnuo" placeholder="Es: € 45.000" />
+</div>
+
+<div class="field">
+  <label for="anniContributivi">Anni contributivi (stimati)</label>
+  <input id="anniContributivi" type="number" min="0" max="60" step="1" placeholder="Es. 3" />
+  <small style="color:#6b7280;">Se non sai il dato, lascia vuoto: il sistema userà una stima prudenziale.</small>
+</div>
+        
+<script>
+(function () {
+  const input = document.getElementById("redditoFamiliareAnnuo");
+  if (!input) return;
+
+  input.addEventListener("blur", () => {
+    const raw = input.value.replace(/[^\d]/g, "");
+    if (!raw) { input.value = ""; return; }
+    const value = parseInt(raw, 10);
+    if (isNaN(value)) return;
+    input.value = "€ " + value.toLocaleString("it-IT");
+  });
+
+  input.addEventListener("focus", () => {
+    input.value = input.value.replace(/[^\d]/g, "");
+  });
+})();
+</script>
+
+<script>
+(function () {
+  const input = document.getElementById("redditoAnnuo");
+  if (!input) return;
+
+  input.addEventListener("blur", () => {
+    const raw = input.value.replace(/[^\d]/g, "");
+    if (!raw) {
+      input.value = "";
+      return;
+    }
+    const value = parseInt(raw, 10);
+    if (isNaN(value)) return;
+    input.value = "€ " + value.toLocaleString("it-IT");
+  });
+
+  input.addEventListener("focus", () => {
+    input.value = input.value.replace(/[^\d]/g, "");
+  });
+})();
+</script>
+ 
+<div>
+  <label>Numero percettori nel nucleo</label>
+  <input type="number" id="numPercettoriReddito" min="1" placeholder="Es: 1 (solo lui) / 2 (coppia)" />
+</div>
+
+<div>
+  <label>Reddito familiare annuo (stimato)</label>
+  <input type="text" id="redditoFamiliareAnnuo" placeholder="Es: € 80.000" />
+</div>
+
+<script>
+(function () {
+  const input = document.getElementById("redditoFamiliareAnnuo");
+  if (!input) return;
+
+  input.addEventListener("blur", () => {
+    const raw = input.value.replace(/[^\d]/g, "");
+    if (!raw) { input.value = ""; return; }
+    const value = parseInt(raw, 10);
+    if (isNaN(value)) return;
+    input.value = "€ " + value.toLocaleString("it-IT");
+  });
+
+  input.addEventListener("focus", () => {
+    input.value = input.value.replace(/[^\d]/g, "");
+  });
+})();
+</script>
+
+
+                <div>
+                    <label>Componenti nucleo familiare</label>
+                    <input type="number" id="nucleoComponenti" min="1" placeholder="Es: 4" />
+                </div>
+
+                <div>
+                    <label>Figli minorenni</label>
+                    <input type="number" id="figliMinorenni" min="0" placeholder="Es: 2" />
+                </div>
+
+                <div>
+    <label>Patrimonio finanziario indicativo</label>
+    <input
+        type="text"
+        id="patrimonioFinanziario"
+        placeholder="Es: € 150.000"
+    />
+</div>
+
+<script>
+(function () {
+  const input = document.getElementById("patrimonioFinanziario");
+  if (!input) return;
+
+  input.addEventListener("blur", () => {
+    const raw = input.value.replace(/[^\d]/g, "");
+    if (!raw) {
+      input.value = "";
+      return;
+    }
+    const value = parseInt(raw, 10);
+    if (isNaN(value)) return;
+    input.value = "€ " + value.toLocaleString("it-IT");
+  });
+
+  input.addEventListener("focus", () => {
+    input.value = input.value.replace(/[^\d]/g, "");
+  });
+})();
+</script>
+
+
+                <div>
+                    <label>Email Cliente</label>
+                    <input type="email" id="emailCliente" placeholder="nome@dominio.it" />
+                </div>
+
+                <div>
+                    <label>Telefono</label>
+                    <input type="text" id="telefonoCliente" placeholder="+39 333 1234567" />
+                </div>
+
+                <div>
+                    <label>Città</label>
+                    <input type="text" id="citta" placeholder="Es: Prato" />
+                </div>
+
+                <div>
+                    <label>Provincia</label>
+                    <input type="text" id="provincia" placeholder="Es: PO" />
+                </div>
+
+                <div>
+                    <label>CAP</label>
+                    <input type="text" id="cap" placeholder="Es: 59100" />
+                </div>
+
+                <div>
+                    <label>Consulente</label>
+                    <select id="consulenteSelect">
+                        <option value="">Seleziona consulente...</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label>Email Consulente</label>
+                    <input type="email" id="emailConsulente" placeholder="auto-compilata" readonly />
+                </div>
+            </div>
+        </div>
+
+           <!-- COPERTURE ATTIVE (V2) -->
+<div class="section-card" id="copertureAttiveSection">
+    <h2>
+        COPERTURE ATTIVE
+        <span class="pill-badge">Step 1-bis</span>
+    </h2>
+
+    <p style="font-size:13px; color:#6b7280; margin-bottom:12px;">
+        Seleziona le coperture già in essere (anche non Generali). Servono per individuare buchi, sovrapposizioni e opportunità.
+    </p>
+
+<style>
+  /* Toggle stile “switch” */
+  .copertura-toggle {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 44px;
+    height: 24px;
+    border-radius: 999px;
+    background: #e5e7eb;
+    border: 1px solid #d1d5db;
+    position: relative;
+    cursor: pointer;
+    transition: all .15s ease-out;
+    flex: 0 0 auto;
+  }
+  .copertura-toggle::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    border-radius: 999px;
+    background: #ffffff;
+    box-shadow: 0 2px 8px rgba(0,0,0,.15);
+    transition: all .15s ease-out;
+  }
+  .copertura-toggle:checked {
+    background: #d71920;
+    border-color: #b91c1c;
+  }
+  .copertura-toggle:checked::after {
+    transform: translateX(20px);
+  }
+/* FIX DEFINITIVO: la .form-grid globale rompe le card Coperture */
+#copertureAttiveSection .form-grid{
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  column-gap: 12px;
+  row-gap: 12px;
+  align-items: flex-start;
+}
+
+@media (max-width: 520px){
+  #copertureAttiveSection .form-grid{
+    grid-template-columns: 1fr;
+  }
+}
+
+</style>
+
+<style>
+  .coperture-v2-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  @media (min-width: 1100px) {
+    .coperture-v2-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  .copertura-v2-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 10px;
+    background: #ffffff;
+  }
+
+  /* ✅ INCOLLA QUI SOTTO */
+  #copertureAttiveSection .form-grid{
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    column-gap: 12px;
+    row-gap: 12px;
+    align-items: flex-start;
+  }
+
+  @media (max-width: 520px){
+    #copertureAttiveSection .form-grid{
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+
+
+    <div id="copertureAttiveV2Container">
+        <!-- Le righe vengono generate da JS -->
+    </div>
+</div>
+
+<!-- 🔒 Legacy (tabella polizze) - nascosta in V2 -->
+<div id="polizzePersonaLegacyBlock" style="display:none;">
+
+    <!-- Toolbar polizze -->
+    <div class="form-grid" style="margin-bottom:10px;">
+
+        <div>
+            <label>Filtro tipo copertura</label>
+            <select id="filtroTipoPolizza">
+                <option value="">Tutte</option>
+                <option value="fondo_pensione">Fondo pensione</option>
+                <option value="tcm">Temporanea caso morte</option>
+                <option value="infortuni">Infortuni</option>
+                <option value="sanitaria">Sanitaria</option>
+                <option value="ltc">Long Term Care</option>
+                <option value="abitazione">Abitazione</option>
+                <option value="rca">RCA</option>
+                <option value="investimenti">Investimenti</option>
+                <option value="accantonamento">Accantonamento / PAC</option>
+            </select>
+        </div>
+
+        <div>
+            <label>Mostra solo non Generali</label>
+            <select id="filtroSoloNonGenerali">
+                <option value="">No, tutte</option>
+                <option value="1">Solo non Generali</option>
+            </select>
+        </div>
+
+        <div>
+            <label>&nbsp;</label>
+            <button class="btn" id="btnAggiungiPolizzaPersona" type="button">
+                + Aggiungi polizza
+            </button>
+        </div>
+    </div>
+
+    <!-- Tabella polizze -->
+    <div id="polizzePersonaContainer" style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; font-size:13px;">
+            <thead>
+                <tr style="border-bottom:1px solid #e5e7eb;">
+                    <th style="text-align:left; padding:6px 4px;">Tipo</th>
+                    <th style="text-align:left; padding:6px 4px;">Compagnia</th>
+                    <th style="text-align:left; padding:6px 4px;">Prodotto</th>
+                    <th style="text-align:right; padding:6px 4px;">Premio annuo</th>
+                    <th style="text-align:right; padding:6px 4px;">Capitale / Rendita</th>
+                    <th style="text-align:center; padding:6px 4px;">Generali</th>
+                    <th style="text-align:center; padding:6px 4px;">Scadenza</th>
+                    <th style="text-align:center; padding:6px 4px;">Strategia</th>
+                    <th style="text-align:center; padding:6px 4px;">Azioni</th>
+                </tr>
+            </thead>
+            <tbody id="polizzePersonaBody">
+                <tr>
+                    <td colspan="9" style="padding:8px 4px; color:#9ca3af; text-align:center;">
+                        Nessuna polizza inserita. Clicca su <strong>“+ Aggiungi polizza”</strong> per iniziare.
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div> <!-- /polizzePersonaLegacyBlock -->
+
+
+        <!-- QUESTIONARIO PERSONA -->
+        <div class="section-card" id="questionarioPersonaSection">
+            <h2>
+                Questionario Metodo Rosso Persona
+                <span class="pill-badge">Step 2</span>
+            </h2>
+
+            <p style="font-size:13px; color:#6b7280; margin-bottom:12px;">
+    Rispondi con il cliente: le domande aiutano a chiarire priorità, coerenza e aree di rischio, per arrivare a decisioni operative.
+</p>
+
+
+            <div id="questionarioPersonaContainer">
+                <!-- Qui verranno renderizzate le domande -->
+            </div>
+
+            <div class="questionario-nav">
+                <button class="btn" id="btnPrevDomanda">⬅ Indietro</button>
+                <button class="btn" id="btnNextDomanda">Avanti ➜</button>
+            </div>
+        </div>
+
+        <!-- RISULTATI PERSONA -->
+        <div class="section-card" id="risultatiPersonaSection">
+            <h2>
+                Risultati Analisi Persona
+                <span class="pill-badge">Step 3</span>
+            </h2>
+        <!-- GOVERNANCE BANNER (BLOCKED / PARTIAL / READY) -->
+<div id="governanceBannerPersona" style="display:none; margin-top:10px;"></div>
+
+            <div class="risultati-grid">
+                <!-- Colonna sinistra: sintesi testuale -->
+                <div>
+                    <h3>Sintesi della situazione del cliente</h3>
+                    <div id="sintesiPersona">
+                        <p style="font-size:13px; color:#9ca3af;">
+                            I risultati (gap statale, normotipo, comportamentale, scenari stress, suggerimenti)
+                            verranno composti e mostrati qui.
+                        </p>
+                    </div>
+
+                    <h3 style="margin-top:18px;">Aree di rischio</h3>
+                    <div class="area-score-row" id="areeRischioPersona">
+                        <!-- Card di punteggio per area (Protezione, Previdenza, Investimento, Liquidità, ecc.) -->
+                    </div>
+                </div>
+
+                <!-- Colonna destra: grafici -->
+                <div>
+                    <h3>Radar & Grafici</h3>
+                    <canvas id="radarPersonaChart" height="240"></canvas>
+
+                    <h3 style="margin-top:20px;">Storico e andamento dell’analisi</h3>
+                    <canvas id="timelinePersonaChart" height="180"></canvas>
+                    <div id="timelinePersona" style="font-size:12px; margin-top:6px; color:#4b5563;"></div>
+                </div>
+            </div>
+
+            <hr style="margin:24px 0; border:none; border-top:1px solid #e5e7eb;" />
+
+            <h3 style="margin-bottom:10px;">Piano di caring</h3>
+            <div
+                class="caring-grid"
+                style="
+                    display:grid;
+                    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+                    gap:12px;
+                    margin-bottom:12px;
+                "
+            >
+                <div>
+                    <label
+                        for="caringDataAppuntamento"
+                        style="display:block; font-size:12px; color:#4b5563; margin-bottom:4px;"
+                    >
+                        Data prossimo contatto
+                    </label>
+                    <input
+                        type="date"
+                        id="caringDataAppuntamento"
+                        class="input"
+                        style="width:100%;"
+                    />
+                </div>
+
+                <div>
+                    <label
+                        for="caringOraAppuntamento"
+                        style="display:block; font-size:12px; color:#4b5563; margin-bottom:4px;"
+                    >
+                        Ora
+                    </label>
+                    <input
+                        type="time"
+                        id="caringOraAppuntamento"
+                        class="input"
+                        style="width:100%;"
+                    />
+                </div>
+
+                <div>
+                    <label
+                        for="caringModalita"
+                        style="display:block; font-size:12px; color:#4b5563; margin-bottom:4px;"
+                    >
+                        Modalità
+                    </label>
+                    <select
+                        id="caringModalita"
+                        class="input"
+                        style="width:100%;"
+                    >
+                        <option value=""></option>
+                        <option value="telefonata">Telefonata</option>
+                        <option value="video">Video call</option>
+                        <option value="presenza">In presenza</option>
+                        <option value="email">Email / recap sintesi</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label
+                        for="caringValutazione"
+                        style="display:block; font-size:12px; color:#4b5563; margin-bottom:4px;"
+                    >
+                        Valutazione incontro
+                    </label>
+                    <select
+                        id="caringValutazione"
+                        class="input"
+                        style="width:100%;"
+                    >
+                        <option value=""></option>
+                        <option value="molto_positivo">Molto positivo</option>
+                        <option value="positivo">Positivo</option>
+                        <option value="neutro">Neutro</option>
+                        <option value="critico">Critico</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="margin-bottom:16px;">
+                <label
+                    for="caringNote"
+                    style="display:block; font-size:12px; color:#4b5563; margin-bottom:4px;"
+                >
+                    Note operative / prossimi passi
+                </label>
+                <textarea
+                    id="caringNote"
+                    class="input"
+                    rows="3"
+                    style="width:100%; resize:vertical;"
+                ></textarea>
+            </div>
+
+            <div
+    class="risultati-actions"
+    style="
+        display:flex;
+        flex-wrap:wrap;
+        gap:10px;
+        margin-top:8px;
+    "
+>
+    <button class="btn btn-secondary" id="btnRiepilogoPersona" type="button">
+        📄 Riepilogo consulenziale
+    </button>
+
+    <button class="btn btn-secondary" id="btnStampaPersona" type="button">
+        🖨 Stampa / PDF
+    </button>
+
+    <button class="btn btn-secondary" id="btnSalvaAnalisiPersona" type="button">
+        💾 Salva analisi
+    </button>
+
+    <button class="btn" id="btnNuovaAnalisiPersona" type="button" style="margin-left:auto;">
+        🔁 Nuova analisi
+    </button>
+</div>
+
+        </div>
+
+
+<!-- Script archivio persona -->
+<script src="persona_archivio.js"></script>
+
+<!-- Script domande persona -->
+<script src="persona_domande.js"></script>
+
+<!-- Script normativa persona -->
+<script src="normativa_persona_2025.js"></script>
+
+<!-- Motore contesto persona (cluster, segmenti, ecc.) -->
+<script src="persona_contesto.js"></script>
+
+<script>
+/* =========================
+   HANDOFF + PREFILL DA CRM
+   posizione: prima di persona_app.js
+   ========================= */
+
+(function () {
+  function readAnalysisHandoff(expectedKind) {
+    try {
+      const raw = localStorage.getItem("GBA_ANALYSIS_HANDOFF_V1");
+      if (!raw) return null;
+
+      const payload = JSON.parse(raw);
+      if (!payload || payload.kind !== expectedKind) return null;
+
+      const ageMs = Date.now() - Number(payload.ts || 0);
+      if (!Number.isFinite(ageMs) || ageMs > 30 * 60 * 1000) return null;
+
+      return payload;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  const handoff = readAnalysisHandoff("PERSONA");
+
+  // 1) ID cliente
+  const selectedId = handoff?.client?.id || localStorage.getItem("GBA_SELECTED_CLIENT_ID");
+  if (!selectedId) {
+    console.log("ℹ️ Persona: nessun cliente preselezionato.");
+    return;
+  }
+
+  // salva comunque (così Persona lo ritrova)
+  localStorage.setItem("GBA_SELECTED_CLIENT_ID", selectedId);
+  localStorage.setItem("GBA_SELECTED_CLIENT_NAME", handoff?.client?.name || localStorage.getItem("GBA_SELECTED_CLIENT_NAME") || "");
+
+  // badge subito (solo nome)
+  const badge = document.getElementById("selectedClientBadge");
+  if (badge) {
+    badge.textContent = localStorage.getItem("GBA_SELECTED_CLIENT_NAME") || "Cliente selezionato";
+    badge.style.display = "inline-flex";
+  }
+console.log("✅ Persona: selectedId =", selectedId);
+
+// 2) Leggi client dal DB CRM e precompila
+const req = indexedDB.open("crm_offline_v1", 4);
+
+req.onerror = () => console.log("❌ Persona Prefill: open DB error =", req.error);
+
+req.onsuccess = () => {
+  const db = req.result;
+
+  try {
+    const tx = db.transaction("clients", "readonly");
+    const store = tx.objectStore("clients");
+    const r = store.get(selectedId);
+
+    r.onerror = () => console.log("❌ Persona Prefill: GET client error =", r.error);
+
+    r.onsuccess = () => {
+      const client = r.result;
+      console.log("✅ Persona Prefill: client trovato =", client);
+
+      if (!client) return;
+
+      // ========== PREFILL CAMPI ==========
+
+      // Professione
+      const inProf = document.getElementById("professione");
+      if (inProf) inProf.value = String(client.professione || "");
+
+      // Telefono / Cellulare
+      const inTel = document.getElementById("telefonoCliente");
+      if (inTel) inTel.value = String(client.cellulare || client.telefono || "");
+
+      // Data nascita (robusta) -> input type="date" vuole YYYY-MM-DD
+      const inNasc = document.getElementById("dataNascita");
+      if (inNasc && client.nascita) {
+        const s = String(client.nascita).trim();
+        let iso = "";
+
+        // DD/MM/YYYY
+        if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) {
+          const [dd, mm, yyyy] = s.split("/");
+          iso = `${yyyy}-${mm}-${dd}`;
+        }
+        // YYYY-MM-DD
+        else if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+          iso = s;
+        }
+        // Excel serial
+        else {
+          const n = Number(s);
+          if (Number.isFinite(n) && n > 20000 && n < 60000) {
+            const epoch = new Date(Date.UTC(1899, 11, 30));
+            const d = new Date(epoch.getTime() + n * 86400000);
+            const dd = String(d.getUTCDate()).padStart(2, "0");
+            const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
+            const yyyy = d.getUTCFullYear();
+            iso = `${yyyy}-${mm}-${dd}`;
+          }
+        }
+
+        if (iso) inNasc.value = iso;
+      }
+
+      // Nome/Cognome (split semplice)
+      const full = (client.name || "").toString().trim().replace(/\s+/g, " ");
+      const parts = full.split(" ");
+      const nome = parts.length > 1 ? parts.slice(0, -1).join(" ") : full;
+      const cognome = parts.length > 1 ? parts.slice(-1).join("") : "";
+
+      const inNome = document.getElementById("nome");
+      if (inNome) inNome.value = nome;
+
+      const inCognome = document.getElementById("cognome");
+      if (inCognome) inCognome.value = cognome;
+
+      // (se ti serve altro prefill, si aggiunge qui, ma ora NON tocchiamo altro)
+    };
+
+  } catch (e) {
+    console.log("❌ Persona Prefill: errore nel prefill", e);
+  }
+};
+
+
+})();
+</script>
+
+
+
+<!-- Governance centrale Persona -->
+<script src="persona_governance.js"></script>
+
+<!-- Script logica persona -->
+<script src="persona_app.js"></script>
+<script src="persona_governance_ui.js"></script>
+
+<!-- Decision Graph (UI) -->
+<section id="decisionGraphSection" style="margin-top:16px;">
+  <h3 style="margin:8px 0;">Percorso consigliato</h3>
+  <div id="decisionGraphContainer"></div>
+</section>
+
+<script>
+  // Montaggio UI decisionGraph (solo presentazione)
+  try { window.mountDecisionGraphUI && window.mountDecisionGraphUI(); } catch (e) {}
+</script>
+
+
+</body>
+</html>
+
+
+
+
+
+

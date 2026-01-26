@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+ <base href="/crm-offline-gba/CRM_OFFLINE_GBA/">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Accesso Piattaforma</title>
+
+  <style>
+    :root{
+      --bg1:#f4efe6;
+      --bg2:#efe6d8;
+      --card:#ffffffcc;
+      --card2:#ffffffee;
+      --text:#1f2328;
+      --muted:#5b6168;
+      --shadow: 0 10px 30px rgba(0,0,0,.10);
+      --shadow2: 0 18px 45px rgba(0,0,0,.14);
+      --radius: 18px;
+      --accent:#b10f1a; /* rosso elegante */
+      --line:#00000012;
+    }
+
+    * { box-sizing: border-box; }
+
+    body{
+      margin:0;
+      min-height:100vh;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(900px 500px at 80% 10%, #ffffff55 0%, transparent 60%),
+        radial-gradient(700px 400px at 20% 20%, #ffffff40 0%, transparent 55%),
+        linear-gradient(180deg, var(--bg1), var(--bg2));
+    }
+
+    .wrap{
+      max-width: 1050px;
+      margin: 0 auto;
+      padding: 28px 18px 40px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap: 18px;
+    }
+
+    /* Header brand */
+    .brand{
+      width: 100%;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap: 10px;
+      padding-top: 10px;
+    }
+
+    .logoBox{
+      width: min(760px, 92vw);
+      border-radius: var(--radius);
+      background: #ffffff70;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--line);
+      padding: 18px 18px 12px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap: 12px;
+    }
+
+    .logoImg{
+      width: min(560px, 88vw);
+      height: auto;
+      display:block;
+      filter: saturate(1.02) contrast(1.02);
+      user-select:none;
+      -webkit-user-drag:none;
+    }
+
+    .subfade{
+      font-weight: 600;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: #2b2f36;
+      opacity: 0;
+      transform: translateY(6px);
+      animation: fadeUp 900ms ease-out 300ms forwards;
+    }
+
+    @keyframes fadeUp{
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .hint{
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 14px;
+      text-align:center;
+      max-width: 820px;
+      line-height: 1.35;
+    }
+
+    /* Cards */
+    .grid{
+      width: 100%;
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 10px;
+    }
+
+    @media (max-width: 920px){
+      .grid{ grid-template-columns: 1fr; }
+    }
+
+    .card{
+      position: relative;
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, var(--card2), var(--card));
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      padding: 18px 18px 16px;
+      display:flex;
+      flex-direction:column;
+      gap: 12px;
+      cursor: pointer;
+      transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+      overflow:hidden;
+      min-height: 130px;
+    }
+
+    .card:hover{
+      transform: translateY(-3px);
+      box-shadow: var(--shadow2);
+      border-color: #0000001f;
+    }
+
+    .topRow{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+    }
+
+    .titleRow{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .icon{
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display:grid;
+      place-items:center;
+      background: #fff;
+      border: 1px solid var(--line);
+    }
+    .icon svg{
+      width: 22px;
+      height: 22px;
+      stroke: var(--accent);
+    }
+
+    .title{
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: .01em;
+      margin:0;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .badge{
+      font-size: 12px;
+      color: #2b2f36;
+      background: #ffffffb5;
+      border: 1px solid var(--line);
+      padding: 6px 10px;
+      border-radius: 999px;
+      display:inline-flex;
+      align-items:center;
+      gap: 6px;
+      user-select:none;
+    }
+    .dot{
+      width: 7px; height: 7px; border-radius: 99px;
+      background: var(--accent);
+      box-shadow: 0 0 0 3px rgba(177,15,26,.12);
+    }
+
+    .cta{
+      margin-top: auto;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      padding-top: 6px;
+      border-top: 1px dashed var(--line);
+    }
+
+    .openTxt{
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .openBtn{
+      border: 0;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 800;
+      padding: 10px 12px;
+      border-radius: 12px;
+      cursor:pointer;
+      transition: transform 120ms ease, filter 120ms ease;
+    }
+    .openBtn:hover{ filter: brightness(1.02); transform: translateY(-1px); }
+    .openBtn:active{ transform: translateY(0); }
+
+    /* Tooltip */
+    .infoBtn{
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: #fff;
+      cursor: pointer;
+      display:grid;
+      place-items:center;
+      user-select:none;
+      transition: transform 120ms ease;
+      flex: 0 0 auto;
+    }
+    .infoBtn:active{ transform: scale(.98); }
+    .infoBtn svg{ width: 18px; height: 18px; stroke: #2b2f36; }
+
+    .tip{
+      position:absolute;
+      top: 56px;
+      right: 14px;
+      width: min(320px, 84vw);
+      background: #111318f0;
+      color: #fff;
+      border-radius: 14px;
+      padding: 12px 12px;
+      box-shadow: 0 18px 55px rgba(0,0,0,.28);
+      border: 1px solid rgba(255,255,255,.10);
+      opacity: 0;
+      transform: translateY(-6px) scale(.98);
+      pointer-events: none;
+      transition: opacity 140ms ease, transform 140ms ease;
+      z-index: 10;
+    }
+
+    .tip::before{
+      content:"";
+      position:absolute;
+      top:-8px;
+      right: 18px;
+      width: 14px;
+      height: 14px;
+      background:#111318f0;
+      transform: rotate(45deg);
+      border-left: 1px solid rgba(255,255,255,.10);
+      border-top: 1px solid rgba(255,255,255,.10);
+    }
+
+    .tip strong{
+      display:block;
+      font-size: 13px;
+      margin-bottom: 4px;
+      letter-spacing: .01em;
+    }
+
+    .tip p{
+      margin:0;
+      font-size: 13px;
+      line-height: 1.35;
+      color: #f1f3f5;
+    }
+
+    /* show tooltip on hover (desktop) */
+    @media (hover:hover){
+      .card:hover .tip{ opacity: 0; } /* non mostrarlo solo con hover card */
+      .infoBtn:hover + .tip{
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        pointer-events: auto;
+      }
+    }
+
+    /* show tooltip via class (mobile + click) */
+    .card.tip-open .tip{
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      pointer-events: auto;
+    }
+
+    /* Footer micro */
+    .footer{
+      margin-top: 6px;
+      color: #6a7078;
+      font-size: 12px;
+      text-align:center;
+      opacity: .9;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap" id="pageRoot">
+    <header class="brand">
+      <div class="logoBox">
+        <img class="logoImg" src="assets/generali.jpg" alt="Generali" />
+        <div class="subfade">Cacciola Assicurazioni</div>
+      </div>
+      <div class="hint">
+        Seleziona l’area di lavoro. Le analisi possono essere avviate anche dal CRM, ma qui entri subito dove ti serve.
+      </div>
+    </header>
+
+    <main class="grid">
+      <!-- CRM -->
+      <section class="card" data-href="crm/CRM.html">
+        <div class="topRow">
+          <div class="titleRow">
+            <div class="icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                <path d="M4 7h16M4 12h16M4 17h10" />
+              </svg>
+            </div>
+            <h2 class="title">CRM</h2>
+          </div>
+
+          <span class="badge"><span class="dot"></span> Operatività</span>
+        </div>
+
+        <button class="infoBtn" type="button" aria-label="Info CRM">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+            <path d="M12 18v-6" />
+            <path d="M12 8h.01" />
+            <circle cx="12" cy="12" r="9" />
+          </svg>
+        </button>
+        <div class="tip" role="tooltip">
+          <strong>Per cosa serve</strong>
+          <p>Gestione clienti, agenda, promemoria e <b>attività commerciali</b>. Qui vivi la giornata e trasformi i contatti in appuntamenti.</p>
+        </div>
+
+        <div class="cta">
+          <div class="openTxt">Apri e lavora sui clienti</div>
+          <button class="openBtn" type="button">Apri</button>
+        </div>
+      </section>
+
+      <!-- Analisi Persona -->
+      <section class="card" data-href="apps/persona/PERSONA.html">
+        <div class="topRow">
+          <div class="titleRow">
+            <div class="icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+            </div>
+            <h2 class="title">Analisi Persona</h2>
+          </div>
+
+          <span class="badge"><span class="dot"></span> Consulenza</span>
+        </div>
+
+        <button class="infoBtn" type="button" aria-label="Info Analisi Persona">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+            <path d="M12 18v-6" />
+            <path d="M12 8h.01" />
+            <circle cx="12" cy="12" r="9" />
+          </svg>
+        </button>
+        <div class="tip" role="tooltip">
+          <strong>Per cosa serve</strong>
+          <p>Analisi dei bisogni della <b>persona</b> e della <b>famiglia</b>, con output operativi e priorità di intervento.</p>
+        </div>
+
+        <div class="cta">
+          <div class="openTxt">Avvia analisi e genera azioni</div>
+          <button class="openBtn" type="button">Apri</button>
+        </div>
+      </section>
+
+      <!-- Analisi Azienda -->
+      <section class="card" data-href="apps/azienda/INDEX.html">
+        <div class="topRow">
+          <div class="titleRow">
+            <div class="icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+                <path d="M3 21h18" />
+                <path d="M5 21V7l7-4 7 4v14" />
+                <path d="M9 21v-6h6v6" />
+              </svg>
+            </div>
+            <h2 class="title">Analisi Azienda</h2>
+          </div>
+
+          <span class="badge"><span class="dot"></span> Impresa</span>
+        </div>
+
+        <button class="infoBtn" type="button" aria-label="Info Analisi Azienda">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+            <path d="M12 18v-6" />
+            <path d="M12 8h.01" />
+            <circle cx="12" cy="12" r="9" />
+          </svg>
+        </button>
+        <div class="tip" role="tooltip">
+          <strong>Per cosa serve</strong>
+          <p>Analisi dei <b>rischi aziendali</b> e delle aree di vulnerabilità, con spunti di protezione e priorità.</p>
+        </div>
+
+        <div class="cta">
+          <div class="openTxt">Valuta rischi e opportunità</div>
+          <button class="openBtn" type="button">Apri</button>
+        </div>
+      </section>
+    </main>
+
+    <div class="footer">
+      Suggerimento: su mobile tocca l’icona “i” per vedere la descrizione.
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const root = document.getElementById("pageRoot");
+      const cards = Array.from(document.querySelectorAll(".card"));
+
+      function closeAllTips(exceptCard) {
+        for (const c of cards) {
+          if (exceptCard && c === exceptCard) continue;
+          c.classList.remove("tip-open");
+        }
+      }
+
+      // Card click naviga (ma non se stai cliccando info o tooltip o bottone)
+      for (const card of cards) {
+        const href = card.getAttribute("data-href");
+        const openBtn = card.querySelector(".openBtn");
+        const infoBtn = card.querySelector(".infoBtn");
+        const tip = card.querySelector(".tip");
+
+        card.addEventListener("click", (e) => {
+          const t = e.target;
+
+          // Se clicchi su info o tooltip: non navigare
+          if (infoBtn.contains(t) || tip.contains(t)) return;
+
+          // Se clicchi sul bottone "Apri": naviga
+          if (openBtn.contains(t)) {
+            window.location.href = href;
+            return;
+          }
+
+          // Click sul resto della card: naviga
+          window.location.href = href;
+        });
+
+        // Info button: toggle tooltip (tap/mobile + click desktop)
+        infoBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const isOpen = card.classList.contains("tip-open");
+          closeAllTips(card);
+          card.classList.toggle("tip-open", !isOpen);
+        });
+      }
+
+      // Click fuori: chiudi tooltip
+      document.addEventListener("click", () => closeAllTips(null));
+      // Esc: chiudi tooltip
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closeAllTips(null);
+      });
+
+      // Evita che click dentro tooltip chiuda subito (su alcuni browser)
+      root.addEventListener("click", (e) => {
+        const insideTip = e.target.closest(".tip");
+        if (insideTip) e.stopPropagation();
+      }, true);
+    })();
+  </script>
+</body>
+</html>
+
+

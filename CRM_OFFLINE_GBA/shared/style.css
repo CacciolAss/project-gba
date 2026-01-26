@@ -1,0 +1,337 @@
+:root {
+    --rosso: #d71920;
+    --rosso-dark: #a41218;
+    --bg: #f5f5f7;
+    --card-bg: #ffffff;
+    --border-soft: #e3e3e3;
+    --text-main: #222;
+    --text-soft: #555;
+    --radius: 18px;
+    --shadow-soft: 0 16px 40px rgba(0,0,0,0.09);
+    --input-bg: #fafafa;
+}
+
+/* Reset base */
+* {
+    box-sizing: border-box;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+}
+
+body {
+    margin: 0;
+    background:
+        radial-gradient(140% 140% at 0% 0%, #ffebe8 0, transparent 40%),
+        radial-gradient(140% 140% at 100% 0%, #e7f0ff 0, transparent 40%),
+        #f4f5fb;
+    color: var(--text-main);
+}
+
+/* ===========================
+   OVERLAY LOGIN
+=========================== */
+
+.overlay {
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(215, 25, 32, 0.96), rgba(121, 6, 20, 0.94));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+}
+
+.login-box {
+    width: min(440px, 92vw);
+    background: #ffffff;
+    border-radius: 28px;
+    padding: 28px 30px 24px;
+    box-shadow: var(--shadow-soft);
+    position: relative;
+}
+
+.login-logo {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: var(--rosso);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 28px;
+    box-shadow: 0 14px 30px rgba(215, 25, 32, 0.65);
+    margin-bottom: 12px;
+}
+
+.login-box h2 {
+    margin: 0 0 4px 0;
+    font-size: 24px;
+}
+
+.login-sub {
+    margin: 0 0 18px 0;
+    font-size: 14px;
+    color: var(--text-soft);
+}
+
+/* Label + input */
+
+.login-box label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 4px;
+    color: #444;
+}
+
+.login-box input {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 999px;
+    border: 1px solid #ddd;
+    background: #fafafa;
+    font-size: 14px;
+    outline: none;
+    transition: all 0.2s ease;
+    margin-bottom: 12px;
+}
+
+.login-box input:focus {
+    border-color: var(--rosso);
+    background: #fff;
+    box-shadow: 0 0 0 2px rgba(215, 25, 32, 0.15);
+}
+
+/* Bottone principale */
+
+.btn {
+    border: none;
+    border-radius: 999px;
+    padding: 11px 22px;
+    background: var(--rosso);
+    color: #fff;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    box-shadow: 0 12px 26px rgba(215, 25, 32, 0.45);
+    transition: all 0.2s ease;
+}
+
+.btn:hover {
+    background: var(--rosso-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 16px 34px rgba(215, 25, 32, 0.55);
+}
+
+.btn:active {
+    transform: translateY(0);
+    box-shadow: 0 10px 22px rgba(215, 25, 32, 0.45);
+}
+
+/* ===========================
+   LAYOUT APP PRINCIPALE
+=========================== */
+
+#mainContainer {
+    min-height: 100vh;
+    padding: 26px 14px 36px;
+}
+
+.container {
+    max-width: 1180px;
+    margin: 0 auto;
+}
+
+/* CARD di sezione */
+
+.section-card {
+    background: var(--card-bg);
+    border-radius: 22px;
+    padding: 22px 20px 24px;
+    margin-bottom: 22px;
+    box-shadow: var(--shadow-soft);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+}
+
+.section-card h2 {
+    margin: 0 0 12px 0;
+    font-size: 22px;
+}
+
+/* Griglia form anagrafica */
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 18px 20px;
+}
+
+.section-card label {
+    display: block;
+    font-size: 13px;
+    margin-bottom: 4px;
+    color: #444;
+}
+
+.section-card input,
+.section-card select {
+    width: 100%;
+    padding: 9px 11px;
+    border-radius: 999px;
+    border: 1px solid #d7d7d7;
+    background: var(--input-bg);
+    font-size: 14px;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.section-card input:focus,
+.section-card select:focus {
+    border-color: var(--rosso);
+    background: #fff;
+    box-shadow: 0 0 0 2px rgba(215, 25, 32, 0.14);
+}
+
+/* Campo “Altro” nascosto di default */
+.altroField {
+    margin-top: 6px;
+}
+
+/* ===========================
+   TOAST NOTIFICHE
+=========================== */
+
+#toastContainer {
+    position: fixed;
+    top: 18px;
+    right: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 1200;
+}
+
+.toast {
+    min-width: 220px;
+    max-width: 320px;
+    padding: 9px 14px;
+    border-radius: 999px;
+    background: #ffffff;
+    font-size: 13px;
+    color: #222;
+    box-shadow: 0 14px 26px rgba(0,0,0,0.18);
+    border-left: 4px solid var(--rosso);
+    animation: toastIn 0.22s ease-out forwards;
+}
+
+.toast.error {
+    border-left-color: #d71920;
+}
+
+.toast.success {
+    border-left-color: #0d8940;
+}
+
+.toast.hide {
+    opacity: 0;
+    transform: translateY(-4px);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+@keyframes toastIn {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive piccoli schermi */
+@media (max-width: 768px) {
+
+    .login-box {
+        border-radius: 22px;
+        padding: 22px 18px 18px;
+    }
+
+    #mainContainer {
+        padding-inline: 10px;
+    }
+
+    .section-card {
+        border-radius: 18px;
+        padding-inline: 16px;
+    }
+
+    #toastContainer {
+        right: 10px;
+        left: 10px;
+        align-items: center;
+    }
+
+    .toast {
+        max-width: 100%;
+    }
+}
+/* Riquadro Raccomandazione Assicurativa */
+#raccomandazioneSection h3 {
+    margin-bottom: 10px;
+    color: #1F2937;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+#raccomandazioneBox {
+    background: #F9FAFB;
+    border-left: 5px solid #2563EB;
+    padding: 18px 20px;
+    border-radius: 8px;
+    color: #374151;
+    font-size: 15px;
+    line-height: 1.48;
+    white-space: pre-line;
+}
+
+#raccomandazioneBox ul {
+    margin-top: 10px;
+    padding-left: 18px;
+}
+
+#raccomandazioneBox li {
+    margin-bottom: 4px;
+}
+
+/* CARDS PER POLIZZE */
+.polizza-card {
+    display: flex;
+    align-items: center;
+    padding: 12px 14px;
+    border: 1px solid #D1D5DB;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    background: #F9FAFB;
+    transition: all 0.2s ease;
+}
+
+.polizza-card:hover {
+    background: #F3F4F6;
+}
+
+.polizza-card input {
+    margin-right: 10px;
+    transform: scale(1.2);
+}
+
+.polizza-card.selected {
+    border-color: #2563EB;
+    background: #EFF6FF;
+}

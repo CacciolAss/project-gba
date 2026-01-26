@@ -1,0 +1,118 @@
+/* =========================================================
+   CRM Theme Override
+   Primary: Generali Red
+   Secondary: Ina Assitalia Blue
+   Goal: contrasto + UI coerente (no ghost buttons)
+   ========================================================= */
+
+:root{
+  --g-red: #D6001C;       /* Generali-style red (brand-ish) */
+  --ia-blue: #0B4DBA;     /* Ina Assitalia-style blue */
+  --ink: #111;
+  --paper: #fff;
+  --muted: #555;
+  --border: #D9D9D9;
+  --bg: #F6F7F9;
+}
+
+/* Page base */
+html, body{
+  background: var(--bg) !important;
+  color: var(--ink) !important;
+}
+
+/* Card look */
+.wrap .card{
+  background: var(--paper) !important;
+  border: 1px solid rgba(0,0,0,.06) !important;
+}
+
+/* Typography */
+.wrap .card h1{
+  letter-spacing: .2px;
+}
+.wrap .card .muted{
+  color: var(--muted) !important;
+  opacity: 1 !important;
+}
+
+/* Controls base */
+.wrap .card input[type="text"],
+.wrap .card input[type="file"],
+.wrap .card select{
+  background: var(--paper) !important;
+  color: var(--ink) !important;
+  border: 1px solid var(--border) !important;
+  opacity: 1 !important;
+  filter: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* Focus ring: blue accent */
+.wrap .card input[type="text"]:focus,
+.wrap .card input[type="file"]:focus,
+.wrap .card select:focus{
+  border-color: rgba(11,77,186,.65) !important;
+  box-shadow: 0 0 0 3px rgba(11,77,186,.15) !important;
+}
+
+/* Buttons base */
+.wrap .card .btn,
+.wrap .card button.btn,
+.wrap .card a.btn{
+  background: #FAFAFA !important;
+  color: var(--ink) !important;
+  border: 1px solid var(--border) !important;
+  opacity: 1 !important;
+  filter: none !important;
+  text-shadow: none !important;
+  box-shadow: none !important;
+  transition: transform .06s ease, box-shadow .12s ease, border-color .12s ease, background .12s ease;
+}
+
+/* Hover: light blue hint */
+.wrap .card .btn:hover,
+.wrap .card button.btn:hover,
+.wrap .card a.btn:hover{
+  border-color: rgba(11,77,186,.55) !important;
+  box-shadow: 0 6px 18px rgba(11,77,186,.10) !important;
+  transform: translateY(-1px);
+}
+
+/* Primary: Generali red */
+.wrap .card .btn-primary,
+.wrap .card button.btn-primary{
+  background: var(--g-red) !important;
+  border-color: var(--g-red) !important;
+  color: #fff !important;
+  box-shadow: 0 10px 22px rgba(214,0,28,.18) !important;
+}
+
+/* Primary hover: red + slight blue edge (that “dual brand” vibe) */
+.wrap .card .btn-primary:hover,
+.wrap .card button.btn-primary:hover{
+  box-shadow: 0 12px 26px rgba(214,0,28,.22), 0 0 0 3px rgba(11,77,186,.12) !important;
+  transform: translateY(-1px);
+}
+
+/* Disabled */
+.wrap .card .btn:disabled,
+.wrap .card button.btn:disabled{
+  opacity: .55 !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+/* List items subtle */
+.wrap .card .item{
+  border-color: rgba(0,0,0,.08) !important;
+}
+
+/* Code chips */
+.wrap .card code{
+  background: rgba(11,77,186,.07) !important;
+  border: 1px solid rgba(11,77,186,.12) !important;
+  color: var(--ink) !important;
+}

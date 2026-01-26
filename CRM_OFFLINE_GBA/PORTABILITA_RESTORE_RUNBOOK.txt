@@ -1,0 +1,46 @@
+CRM_OFFLINE_GBA — RUNBOOK PORTABILITÀ & RESTORE (OFFLINE)
+
+A) AVVIO CORRETTO (OBBLIGATORIO)
+1) Non aprire mai i file .html con doppio click (file://). I moduli vengono bloccati.
+2) Avviare sempre da server locale offline:
+   - Apri PowerShell nella root del progetto (cartella CRM_OFFLINE_GBA)
+   - Esegui:
+     py -m http.server 8000
+     (oppure: python -m http.server 8000)
+   - Apri nel browser:
+     http://localhost:8000/crm/CRM.html
+
+B) BACKUP DATI (da ogni device)
+1) Apri CRM: http://localhost:8000/crm/CRM.html
+2) Esegui: Export Backup (JSON)
+3) Salva il file in cartella dedicata:
+   BACKUP_DAILY/<DATA>/<DEVICE>/<UTENTE>/
+4) Non modificare lo schema dentro al file JSON.
+5) Il backup include:
+   - clients
+   - alerts
+   - audit
+
+C) RESTORE DATI (su device nuovo o DB vuoto)
+1) Avvio corretto via http://localhost (mai file://)
+2) Login (se rimbalza su Persona: fai login e poi torna al CRM)
+3) Seleziona file JSON backup
+4) Esegui: Restore Backup (MERGE)
+5) Verifica post-restore:
+   - Clienti visibili > 0
+   - Nessun errore rosso in console
+
+D) OVERWRITE (SOLO EMERGENZA)
+1) OVERWRITE cancella clients/alerts/audit e ripristina dal backup.
+2) Usare solo quando:
+   - DB corrotto
+   - dati incoerenti
+   - test controllati
+3) Prima fare sempre un export del DB attuale.
+
+E) TEST PORTABILITÀ (CHECK RAPIDO)
+1) Apri finestra Incognito/InPrivate
+2) Vai su: http://localhost:8000/crm/CRM.html
+3) Verifica DB vuoto (clienti 0)
+4) Restore MERGE con backup “buono”
+5) Verifica clienti visibili e log OK

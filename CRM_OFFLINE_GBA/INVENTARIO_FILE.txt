@@ -1,0 +1,41 @@
+﻿
+FullName                                                                     Length LastWriteTime      
+--------                                                                     ------ -------------      
+C:\Users\user\Desktop\CRM_OFFLINE_GBA\.gitignore                                192 19/12/2025 16:07:57
+C:\Users\user\Desktop\CRM_OFFLINE_GBA\apps\azienda\domande_full.js           131502 25/11/2025 18:07:04
+C:\Users\user\Desktop\CRM_OFFLINE_GBA\apps\azienda\incongruenze.js            42080 21/11/2025 17:07:53
+C:\Users\user\Desktop\CRM_OFFLINE_GBA\apps\azienda\incongruenze-premium.css   10851 21/11/2025 17:08:21
+C:\Users\user\Desktop\CRM_OFFLINE_GBA\apps\azienda\incongruenze-premium.js    11208 21/11/2025 17:09:07
+C:\Users\user\Desktop\CRM_OFFLINE_GBA\apps\azienda\INDEX.html                145183 29/12/2025 11:14:13
+C:\Users\user\Desktop\CRM_OFFLINE_GBA\apps\azienda\scoring_commerciale.js      3167 26/11/2025 14:06:43
+C:\Users\user\Desktop\CRM_OFFLINE_GBA\apps\persona\normativa_persona_2025.js   4254 02/12/2025 14:24:11
+C:\Users\user\Desktop\CRM_OFFLINE_GBA\apps\persona\PERSONA.html               35824 08/01/2026 17:01:12
+C:\Users\user\Desktop\CRM_OFFLINE_GBA\apps\persona\persona_app.js            218187 12/01/2026 14:40:25
+C:\Users\user\Desktop\CRM_OFFLINE_GBA\apps\persona\persona_archivio.js        13801 16/12/2025 10:59:15
+C:\Users\user\Desktop\CRM_OFFLINE_GBA\apps\persona\persona_contesto.js        12655 08/01/2026 11:35:38
+C:\Users\user\Desktop\CRM_OFFLINE_GBA\apps\persona\persona_domande.js         23871 12/12/2025 09:14:06
+C:\Users\user\Desktop\CRM_OFFLINE_GBA\apps\persona\persona_governance.js      10656 08/01/2026 16:22:59
+C:\Users\user\Desktop\CRM_OFFLINE_GBA\apps\persona\persona_governance_ui.js   29251 09/01/2026 17:59:09
+C:\Users\user\Desktop\CRM_OFFLINE_GBA\crm\CRM.html                            43777 09/01/2026 15:03:50
+C:\Users\user\Desktop\CRM_OFFLINE_GBA\crm\crm_override.css                     3160 30/12/2025 17:10:42
+C:\Users\user\Desktop\CRM_OFFLINE_GBA\crm\db.js                               25278 09/01/2026 14:39:45
+C:\Users\user\Desktop\CRM_OFFLINE_GBA\crm\ids.js                                365 22/12/2025 11:53:34
+C:\Users\user\Desktop\CRM_OFFLINE_GBA\crm\org.js                               8248 24/12/2025 10:04:12
+C:\Users\user\Desktop\CRM_OFFLINE_GBA\crm\README.md                              40 19/12/2025 17:13:05
+C:\Users\user\Desktop\CRM_OFFLINE_GBA\demo-data\README.md                        62 19/12/2025 17:15:09
+C:\Users\user\Desktop\CRM_OFFLINE_GBA\docs\README.md                             45 19/12/2025 17:14:20
+C:\Users\user\Desktop\CRM_OFFLINE_GBA\INVENTARIO_FILE.txt                      3791 12/01/2026 14:59:04
+C:\Users\user\Desktop\CRM_OFFLINE_GBA\PORTABILITA_RESTORE_RUNBOOK.txt          1564 30/12/2025 14:00:27
+C:\Users\user\Desktop\CRM_OFFLINE_GBA\shared\chart.min.js                    208522 21/11/2025 17:05:39
+C:\Users\user\Desktop\CRM_OFFLINE_GBA\shared\comuni.js                        15218 21/11/2025 17:06:06
+C:\Users\user\Desktop\CRM_OFFLINE_GBA\shared\consulenti.js                     8750 21/11/2025 17:06:43
+C:\Users\user\Desktop\CRM_OFFLINE_GBA\shared\login.html                        5778 02/01/2026 15:10:20
+C:\Users\user\Desktop\CRM_OFFLINE_GBA\shared\prodotti_config.js                1637 24/11/2025 18:08:30
+C:\Users\user\Desktop\CRM_OFFLINE_GBA\shared\session_global.js                 1883 29/12/2025 09:51:10
+C:\Users\user\Desktop\CRM_OFFLINE_GBA\shared\style.css                         6731 21/11/2025 17:10:15
+C:\Users\user\Desktop\CRM_OFFLINE_GBA\shared\xlsx.full.min.js                848562 21/11/2025 17:10:41
+C:\Users\user\Desktop\CRM_OFFLINE_GBA\tools\generate_org.py                    4595 24/12/2025 09:46:49
+C:\Users\user\Desktop\CRM_OFFLINE_GBA\tools\ORGANIGRAMMA.xlsx                 10359 24/12/2025 09:24:16
+
+
+

@@ -1,0 +1,1330 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>CRM Offline - MVP</title>
+
+  <link rel="stylesheet" href="../shared/style.css">
+  <link rel="stylesheet" href="./crm_override.css">
+
+  <style>
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 16px; }
+    .card { background: #fff; border-radius: 12px; padding: 16px; box-shadow: 0 6px 18px rgba(0,0,0,.08); }
+    .row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+    .btn { padding: 10px 14px; border-radius: 10px; border: 1px solid #ddd; background:#f7f7f7; cursor:pointer; }
+    .btn-primary { background:#111; color:#fff; border-color:#111; }
+    .muted { opacity: .75; font-size: 14px; }
+    .list { margin-top: 12px; }
+    .item { padding: 10px 12px; border: 1px solid #eee; border-radius: 10px; margin-top: 8px; }
+    code { background:#f2f2f2; padding: 2px 6px; border-radius: 6px; }
+    input[type="file"] { padding: 6px; border: 1px solid #ddd; border-radius: 10px; background:#fff; }
+    input[type="text"] { padding:10px; border-radius:10px; border:1px solid #ddd; min-width:280px; }
+  </style>
+<style>
+/* ================================
+   UX TABLET FIX – CONTRASTO + TOUCH
+   ================================ */
+
+:root {
+  --g-red: #c8102e;        /* Rosso Generali */
+  --g-red-dark: #9f0c24;
+  --g-blue: #005aa7;       /* Blu INA */
+  --g-bg: #f5f6f8;
+}
+
+/* layout base */
+body {
+  background: var(--g-bg);
+  font-size: 16px;
+}
+
+.wrap {
+  max-width: 1200px;
+}
+
+/* card più leggibile */
+.card {
+  background: #ffffff;
+}
+
+/* bottoni */
+.btn {
+  min-height: 44px;              /* touch target */
+  padding: 12px 16px;
+  font-size: 16px;
+  background: #ffffff;
+  border: 2px solid #ccc;
+  color: #111;
+}
+
+.btn:hover {
+  border-color: var(--g-blue);
+}
+
+.btn-primary {
+  background: var(--g-red);
+  border-color: var(--g-red);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: var(--g-red-dark);
+}
+
+/* input e select */
+input[type="text"],
+input[type="file"],
+select {
+  min-height: 44px;
+  font-size: 16px;
+  border: 2px solid #ccc;
+  background: #fff;
+  color: #111;
+}
+
+/* select visibile su tablet */
+select {
+  appearance: auto;
+}
+
+/* testi secondari */
+.muted {
+  color: #555;
+  opacity: 1;
+}
+
+/* lista clienti */
+.item {
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+/* evita hover-only (tablet) */
+.btn:hover,
+.btn:focus {
+  outline: none;
+}
+/* ---- Tablet polish: spacing + leggibilità liste ---- */
+.row { gap: 14px; }
+
+.btn, input[type="text"], input[type="file"], select {
+  border-radius: 12px;
+}
+
+input[type="text"] { min-width: 320px; }
+
+.list { margin-top: 14px; }
+
+.item {
+  padding: 12px 14px;
+  border-radius: 12px;
+  border-color: rgba(0,0,0,.10);
+}
+
+.item .muted { display: inline-block; margin-top: 4px; }
+
+/* lista clienti: riduci “rumore” e rendi più scansionabile */
+#clients .item code { font-size: 14px; }
+#clients .item strong { font-size: 16px; }
+#clients .item { background: #fff; }
+
+/* sticky header mentale: separatori migliori */
+h3 { margin-top: 18px; }
+
+</style>
+
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>CRM Offline (MVP)</h1>
+      <p class="muted">Offline-first, zero backend. Demo: crea clienti + importa Excel + dedup + alert persistenti.</p>
+
+      <div class="row" style="margin-top:12px;">
+        <button id="btnOpenPersona" class="btn">Apri Persona</button>
+        <button id="btnOpenAzienda" class="btn">Apri Azienda</button>
+        <button id="btnDbCheck" class="btn btn-primary">Avvia CRM (controllo dati)</button>
+        <button id="btnSwitchUser" class="btn">Cambia utente</button>
+      </div>
+
+      <div class="row" style="margin-top:14px;">
+        <input id="inpName" type="text" placeholder="Nome cliente (es. Rossi Mario)">
+        <button id="btnAddClient" class="btn btn-primary">Crea cliente</button>
+        <span class="muted">Crea un cliente con codice PW e lo salva in locale.</span>
+      </div>
+
+      <div class="row" style="margin-top:12px;">
+        <input id="fileExcel" type="file" accept=".xlsx" />
+        <button id="btnImportExcel" class="btn">Importa Excel (Portafoglio)</button>
+        <span class="muted">Crea clienti dal foglio 1. Dedup su Anagrafica+Dt Nasc.+Comune.</span>
+      </div>
+
+      <div class="row" style="margin-top:12px;">
+        <button id="btnCalcAlerts" class="btn">Calcola Alert (MVP)</button>
+        <button id="btnClearAlerts" class="btn">Pulisci Alert</button>
+        <button id="btnShowAlerts" class="btn">Mostra alert attivi</button>
+        <span class="muted">Alert in-app persistenti basati sui bucket (Auto/Protection...).</span>
+      </div>
+
+      <div class="row" style="margin-top:12px;">
+        <button id="btnExportAll" class="btn">Scarica Backup</button>
+        <span class="muted">Esporta un backup completo del CRM in un file.</span>
+      </div>
+
+      <div class="row" style="margin-top:12px;">
+        <input id="fileBackup" type="file" accept=".json" />
+        <button id="btnRestoreMerge" class="btn">Ripristina Backup (aggiungi)</button>
+<button id="btnRestoreOverwrite" class="btn">Ripristina Backup (sostituisci tutto)</button>
+<span class="muted">“Aggiungi” unisce ai dati esistenti. “Sostituisci tutto” cancella e ripristina dal backup.</span>
+
+      </div>
+
+      <h3 style="margin-top:16px;">Promemoria / Appuntamenti</h3>
+
+      <div class="row" style="margin-top:12px;">
+        <select id="selTaskClient" class="btn" style="background:#fff;">
+          <option value="">Seleziona cliente…</option>
+        </select>
+
+        <input id="inpTaskTitle" type="text" placeholder="Titolo (es. Richiamo protezione)">
+        <input id="inpTaskDue" type="date" placeholder="Scadenza">
+
+        <button id="btnCreateTask" class="btn btn-primary">Crea promemoria</button>
+<button id="btnListTasksDue3" class="btn">Scadenze entro 3 giorni</button>
+<button id="btnListTasksDue1" class="btn">Scadenze entro 1 giorno</button>
+
+      </div>
+
+      <div class="row" style="margin-top:12px;">
+        <button id="btnGenReminders3" class="btn">Crea avvisi (−3 giorni)</button>
+<button id="btnGenReminders1" class="btn">Crea avvisi (−1 giorno)</button>
+        <span class="muted">Crea alert in-app dai task in scadenza, senza duplicati.</span>
+      </div>
+
+      <div style="margin-top:14px;">
+        <div id="status" class="muted">Stato: pronto.</div>
+      </div>
+
+      <h3 style="margin-top:16px;">Log</h3>
+      <div class="list" id="log"></div>
+
+      <h3 style="margin-top:16px;">Clienti</h3>
+      <div class="list" id="clients"></div>
+    </div>
+  </div>
+
+  <script src="../shared/xlsx.full.min.js"></script>
+  <script src="../shared/session_global.js"></script>
+
+  <script type="module">
+    import {
+  openDb,
+  addClient,
+  putClient,
+  getAllClients,
+  getVisibleClients,
+  getClientByExternalKey,
+  upsertAlert,
+  getAlertsByStatus,
+  dismissAlertByKey,
+  appendAudit,
+  exportAllData,
+  importAllData,
+  upsertTask,
+  getTasksDueWithin,
+  markTaskDoneByKey
+} from "./db.js";
+
+
+    import { uuid, generatePW } from "./ids.js";
+    import { org } from "./org.js";
+
+    // -----------------------
+    // DOM refs
+    // -----------------------
+    const statusEl = document.getElementById("status");
+    const logEl = document.getElementById("log");
+    const clientsEl = document.getElementById("clients");
+
+    function setStatus(msg) { statusEl.textContent = "Stato: " + msg; }
+    function logLine(html) {
+      const div = document.createElement("div");
+      div.className = "item";
+      div.innerHTML = html;
+      logEl.prepend(div);
+    }
+
+    // -----------------------
+    // USER SESSION (MVP)
+    // -----------------------
+    const s = window.GBA_SESSION.require({ redirectTo: "../shared/login.html?target=../crm/CRM.html" });
+    const currentUser = { id: s.userId, role: s.role };
+
+    // 🔧 Auto-normalizzazione task importati da Persona (ownerId/status/key) — boot CRM
+(async () => {
+  try {
+    const uid = (currentUser?.id || "").toString().trim();
+    if (!uid) return;
+
+    const { openDb } = await import("./db.js");
+    const db = await openDb();
+
+    const tx = db.transaction("tasks", "readwrite");
+    const store = tx.objectStore("tasks");
+
+    const all = await new Promise((resolve, reject) => {
+      const r = store.getAll();
+      r.onsuccess = () => resolve(r.result || []);
+      r.onerror = () => reject(r.error);
+    });
+
+    for (const t of all) {
+      if (!t || typeof t !== "object") continue;
+      if (t.source !== "persona_playbook") continue;
+
+      let changed = false;
+
+      // status: "OPEN" -> "open"
+      if (typeof t.status === "string") {
+        const norm = t.status.trim().toLowerCase();
+        if (norm !== t.status) { t.status = norm; changed = true; }
+      } else {
+        t.status = "open"; changed = true;
+      }
+
+      // ownerId: UNKNOWN -> utente loggato
+      if (!t.ownerId || t.ownerId === "UNKNOWN") {
+        t.ownerId = uid; changed = true;
+      }
+
+      // key logica (dedup / audit)
+      if (!t.key) {
+        t.key = `${t.nodeId || ""}|${t.title || ""}|${t.clientId || ""}|${t.ownerId || ""}`;
+        changed = true;
+      }
+
+      if (changed) {
+        try { store.put(t); } catch (e) {}
+      }
+    }
+
+    await new Promise((resolve, reject) => {
+      tx.oncomplete = () => resolve(true);
+      tx.onabort = () => reject(tx.error);
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch (e) {
+    console.warn("Auto-normalizzazione task Persona fallita:", e);
+  }
+})();
+
+    // -----------------------
+    // Utils
+    // -----------------------
+    function normStr(v) {
+      return (v ?? "")
+        .toString()
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, " ");
+    }
+
+function formatBirth(v) {
+  if (v === null || v === undefined || v === "") return "-";
+
+  // Caso A: già stringa con separatori
+  const s = v.toString().trim();
+
+  // DD/MM/YYYY
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) return s;
+
+  // YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+    const [yyyy, mm, dd] = s.split("-");
+    return `${dd}/${mm}/${yyyy}`;
+  }
+
+  // Caso B: numero "seriale Excel" (es. 30803)
+  // Excel usa giorni dal 1899-12-30 (con bug 1900). Questo è lo standard pratico.
+  const n = Number(s);
+  if (Number.isFinite(n) && n > 20000 && n < 60000) {
+    const epoch = new Date(Date.UTC(1899, 11, 30));
+    const d = new Date(epoch.getTime() + n * 86400000);
+    const dd = String(d.getUTCDate()).padStart(2, "0");
+    const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
+    const yyyy = d.getUTCFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  }
+
+  // fallback: mostra quello che c'è
+  return s;
+}
+
+    function makeExternalKey(row) {
+      const nome = normStr(row["Anagrafica"]);
+      const comune = normStr(row["Comune"]);
+      const nasc = normStr(row["Dt Nasc."]);
+      return nasc ? `${nome}|${nasc}|${comune}` : `${nome}|${comune}`;
+    }
+
+    function truthy(v) {
+      if (v === null || v === undefined) return false;
+      if (typeof v === "number") return v !== 0;
+      const s = v.toString().trim().toLowerCase();
+      return s !== "" && s !== "0" && s !== "no" && s !== "false";
+    }
+
+    function alertKey(clientId, type) {
+      return `${clientId}::${type}`;
+    }
+
+
+    function canonUserId(v) {
+      return (v ?? "").toString().trim().toUpperCase().replace(/\s+/g, " ");
+    }
+
+    function roleRank(role) {
+      const r = (role || "").toString().toUpperCase();
+      if (r === "ADMIN") return 4;
+      if (r === "MANAGER") return 3;
+      if (r === "GENERAL MANAGER") return 3;
+      if (r === "TEAM_LEADER") return 2;
+      if (r === "AFFIANCATORE") return 1;
+      return 0;
+    }
+
+    function isInHierarchyScope(currentUserId, ownerId) {
+      const target = canonUserId(currentUserId);
+      let cur = canonUserId(ownerId);
+
+      const reportsTo = org?.reportsToByUserId || {};
+      const seen = new Set();
+
+      while (cur && !seen.has(cur)) {
+        if (cur === target) return true;
+        seen.add(cur);
+        cur = canonUserId(reportsTo[cur] || "");
+      }
+      return false;
+    }
+
+    function canSeeFull(currentUser, client) {
+      const uid = canonUserId(currentUser?.id);
+      const owner = canonUserId(client?.ownerId);
+      const role = (currentUser?.role || "").toString().toUpperCase();
+
+      if (role === "ADMIN" || role === "MANAGER" || role === "GENERAL MANAGER") return true;
+      if (uid && owner && uid === owner) return true;
+
+      if (role === "TEAM_LEADER" && isInHierarchyScope(uid, owner)) return true;
+
+      if (role === "AFFIANCATORE") {
+        const globals = new Set((org?.globalAssistants || []).map(canonUserId));
+        if (globals.has(uid)) return true;
+
+        const assigned = org?.assignedAssistantByOwnerId || {};
+        const a = canonUserId(assigned[owner] || "");
+        if (a && a === uid) return true;
+      }
+
+      return false;
+    }
+
+    function canEdit(currentUser, client) {
+      return canSeeFull(currentUser, client);
+    }
+
+    // -----------------------
+    // UI navigation
+    // -----------------------
+    document.getElementById("btnOpenPersona").onclick = () => location.href = "../apps/persona/PERSONA.html";
+    document.getElementById("btnOpenAzienda").onclick = () => location.href = "../apps/azienda/INDEX.html";
+    document.getElementById("btnSwitchUser").onclick = () => {
+  window.GBA_SESSION.clear();
+  location.href = "../shared/login.html?target=../crm/CRM.html";
+};
+
+
+
+    // -----------------------
+    // BACKUP (download JSON)
+    // -----------------------
+    function downloadJson(filename, obj) {
+      const blob = new Blob([JSON.stringify(obj, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    document.getElementById("btnExportAll").onclick = async () => {
+      try {
+        setStatus("export backup…");
+        const payload = await exportAllData();
+        const stamp = new Date().toISOString().slice(0,19).replace(/[:T]/g, "-");
+        downloadJson(`CRM_BACKUP_${stamp}.json`, payload);
+        logLine(`✅ Backup esportato: <code>CRM_BACKUP_${stamp}.json</code>`);
+        setStatus("pronto.");
+      } catch (e) {
+        console.error(e);
+        logLine(`❌ Export fallito: <code>${e?.message || e}</code>`);
+        setStatus("errore.");
+      }
+    };
+
+    async function readJsonFile(file) {
+      const txt = await file.text();
+      return JSON.parse(txt);
+    }
+
+    async function doRestore(mode) {
+      const inp = document.getElementById("fileBackup");
+      const file = inp.files && inp.files[0];
+
+      if (!file) {
+        logLine("⚠️ Seleziona prima un file JSON di backup.");
+        return;
+      }
+
+      if (mode === "overwrite") {
+        const ok = confirm("CONFERMI OVERWRITE? Cancella clients/alerts/audit e ripristina dal backup.");
+        if (!ok) {
+          logLine("🛑 Restore OVERWRITE annullato.");
+          return;
+        }
+      }
+
+      try {
+        setStatus("restore backup…");
+        logLine(`♻️ Restore avviato (${mode.toUpperCase()}): <strong>${file.name}</strong>`);
+
+        const backup = await readJsonFile(file);
+        const report = await importAllData(backup, { mode, includeAudit: true });
+
+        logLine(`✅ Restore completato: clients upserted=${report.counts.clients.upserted}, merged=${report.counts.clients.mergedOnUnique}, errors=${report.counts.clients.errors}`);
+        logLine(`✅ Alerts: upserted=${report.counts.alerts.upserted}, merged=${report.counts.alerts.mergedOnUnique}, errors=${report.counts.alerts.errors}`);
+        logLine(`✅ Audit: added=${report.counts.audit.added}, skipped=${report.counts.audit.skipped}, errors=${report.counts.audit.errors}`);
+
+        if (report.errors && report.errors.length) {
+          logLine(`⚠️ Warning: <strong>${report.errors.length}</strong> errori durante il restore (vedi console).`);
+          console.warn("RESTORE REPORT ERRORS:", report.errors);
+        }
+
+        await renderClients();
+        setStatus("pronto.");
+      } catch (e) {
+        console.error(e);
+        logLine(`❌ Restore fallito: <code>${e?.message || e}</code>`);
+        setStatus("errore.");
+      }
+    }
+
+    document.getElementById("btnRestoreMerge").onclick = () => doRestore("merge");
+    document.getElementById("btnRestoreOverwrite").onclick = () => doRestore("overwrite");
+
+    // -----------------------
+    // Tasks UI helpers
+    // -----------------------
+    function fillTaskClientSelect(clients) {
+      const sel = document.getElementById("selTaskClient");
+      if (!sel) return;
+
+      const keep = sel.value || "";
+      sel.innerHTML = `<option value="">Seleziona cliente…</option>`;
+
+      (clients || []).forEach(c => {
+        const opt = document.createElement("option");
+        opt.value = c.id;
+        opt.textContent = `${c.name || "(senza nome)"} — ${c.code || ""}`;
+        sel.appendChild(opt);
+      });
+
+      if (keep) sel.value = keep;
+    }
+
+    function parseDueDateToIso(dateStr) {
+  if (!dateStr) return null;
+  const s = dateStr.trim();
+
+  // Caso 1: input type="date" -> YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+    const d = new Date(`${s}T09:00:00`);
+    if (!Number.isFinite(d.getTime())) return null;
+    return d.toISOString();
+  }
+
+  // Caso 2: inserimento manuale -> DD/MM/YYYY
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) {
+    const [dd, mm, yyyy] = s.split("/");
+    const iso = `${yyyy}-${mm}-${dd}`;
+    const d = new Date(`${iso}T09:00:00`);
+    if (!Number.isFinite(d.getTime())) return null;
+    return d.toISOString();
+  }
+
+  return null;
+}
+
+
+    function makeTaskKey({ clientId, ownerId, dueAt, title }) {
+      const t = (title || "").trim().toLowerCase().slice(0, 80);
+      return `task|${clientId || ""}|${ownerId || ""}|${dueAt || ""}|${t}`;
+    }
+
+    // -----------------------
+    // Crea Task (MVP)
+    // -----------------------
+    document.getElementById("btnCreateTask").onclick = async () => {
+      try {
+        const sel = document.getElementById("selTaskClient");
+        const clientId = sel?.value || "";
+
+        const title = (document.getElementById("inpTaskTitle")?.value || "").trim();
+        const dueStr = (document.getElementById("inpTaskDue")?.value || "").trim();
+        const dueAt = parseDueDateToIso(dueStr);
+
+        if (!clientId) { logLine("⚠️ Seleziona un cliente prima di creare un task."); return; }
+        if (!title) { logLine("⚠️ Inserisci un titolo task."); return; }
+        if (!dueAt) { logLine("⚠️ Scadenza non valida. Usa il calendario oppure formato GG/MM/AAAA."); return; }
+
+        const ownerId = currentUser.id;
+
+        const task = {
+          id: crypto.randomUUID(),
+          clientId,
+          ownerId,
+          type: "TASK",
+          title,
+          notes: "",
+          dueAt,
+          status: "open",
+        };
+
+        task.key = makeTaskKey(task);
+
+        await upsertTask(task);
+
+        logLine(`✅ Task creato: <strong>${title}</strong> — scadenza <code>${dueStr}</code>`);
+        setStatus("pronto.");
+      } catch (e) {
+        console.error(e);
+        logLine(`❌ Crea Task fallito: <code>${e?.message || e}</code>`);
+        setStatus("errore.");
+      }
+    };
+
+// -----------------------
+// LISTA TASK IN SCADENZA (nel LOG)
+// -----------------------
+function fmtShortDate(iso) {
+  if (!iso) return "-";
+  const d = new Date(iso);
+  if (!Number.isFinite(d.getTime())) return String(iso);
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  return `${dd}/${mm}/${yyyy}`;
+}
+
+function findClientNameById(clients, id) {
+  const c = (clients || []).find(x => x && x.id === id);
+  return c?.name || "(cliente)";
+}
+
+async function listTasksDue(days) {
+  try {
+    setStatus(`carico scadenze ${days}g…`);
+
+    // NB: per ora filtriamo per ownerId = utente loggato (coerente col tuo db.js)
+    const tasks = await getTasksDueWithin(days, currentUser.id);
+
+    if (!tasks.length) {
+      logLine(`📭 Nessun promemoria in scadenza entro <strong>${days}</strong> giorni.`);
+      setStatus("pronto.");
+      return;
+    }
+
+    // mi serve la mappa clienti per mostrare nomi leggibili
+    const clients = await getAllClients();
+
+    logLine(`📌 Promemoria in scadenza entro <strong>${days}</strong> giorni: <strong>${tasks.length}</strong>`);
+
+    for (const t of tasks.slice(0, 50)) {
+      const clientName = findClientNameById(clients, t.clientId);
+      const due = fmtShortDate(t.dueAt);
+      const key = t.key || "";
+
+      logLine(
+        `⏳ <strong>${clientName}</strong> — ${t.title || "(senza titolo)"} ` +
+        `<span class="muted">| Scadenza: <code>${due}</code></span> ` +
+        `<button class="btn btn-done" data-key="${key}">Fatto</button>`
+      );
+    }
+
+    // collega i bottoni "Fatto" appena generati nel log
+    Array.from(document.querySelectorAll(".btn-done")).forEach(btn => {
+      btn.onclick = async () => {
+        const key = btn.getAttribute("data-key") || "";
+        if (!key) return;
+
+        const ok = await markTaskDoneByKey(key);
+        if (ok) {
+          logLine(`✅ Promemoria marcato come <strong>Fatto</strong> (<code>${key.slice(0, 24)}…</code>)`);
+          await appendAudit({
+            id: crypto.randomUUID(),
+            type: "TASK_DONE",
+            actor: currentUser.id,
+            entityType: "task",
+            entityId: key,
+            data: { key }
+          });
+        } else {
+          logLine(`⚠️ Non trovato (o già chiuso): <code>${key.slice(0, 24)}…</code>`);
+        }
+      };
+    });
+
+    setStatus("pronto.");
+  } catch (e) {
+    console.error(e);
+    logLine(`❌ Lista scadenze fallita: <code>${e?.message || e}</code>`);
+    setStatus("errore.");
+  }
+}
+
+document.getElementById("btnListTasksDue3").onclick = () => listTasksDue(3);
+document.getElementById("btnListTasksDue1").onclick = () => listTasksDue(1);
+
+// -----------------------
+// REMINDER IN-APP DA TASK (anti-duplicati)
+// -----------------------
+function reminderKey(taskKey, days) {
+  return `task_reminder|${days}|${taskKey || ""}`;
+}
+
+async function generateTaskReminders(days) {
+  try {
+    setStatus(`genera avvisi ${days}g…`);
+
+    const tasks = await getTasksDueWithin(days, currentUser.id);
+    if (!tasks.length) {
+      logLine(`📭 Nessun promemoria entro ${days}g: niente avvisi creati.`);
+      setStatus("pronto.");
+      return;
+    }
+
+    const clients = await getAllClients();
+    let created = 0;
+
+    for (const t of tasks) {
+      const taskKey = t.key || "";
+      if (!taskKey) continue;
+
+      const k = reminderKey(taskKey, days);
+      const clientName = findClientNameById(clients, t.clientId);
+
+      await upsertAlert({
+        id: crypto.randomUUID(),
+        key: k,
+        clientId: t.clientId,
+        type: "TASK_REMINDER",
+        status: "active",
+        title: `Promemoria in scadenza (${days}g): ${t.title || "Senza titolo"}`,
+        payload: {
+          taskKey,
+          dueAt: t.dueAt || null,
+          clientName
+        }
+      });
+
+      created++;
+    }
+
+    await appendAudit({
+      id: crypto.randomUUID(),
+      type: "TASK_REMINDERS_GENERATED",
+      actor: currentUser.id,
+      entityType: "alerts",
+      entityId: "bulk",
+      data: { days, created }
+    });
+
+    logLine(`🔔 Avvisi creati/aggiornati: <strong>${created}</strong> (anti-duplicati via key).`);
+    setStatus("pronto.");
+  } catch (e) {
+    console.error(e);
+    logLine(`❌ Generazione avvisi fallita: <code>${e?.message || e}</code>`);
+    setStatus("errore.");
+  }
+}
+
+document.getElementById("btnGenReminders3").onclick = () => generateTaskReminders(3);
+document.getElementById("btnGenReminders1").onclick = () => generateTaskReminders(1);
+
+    // -----------------------
+    // DB check
+    // -----------------------
+    document.getElementById("btnDbCheck").onclick = async () => {
+      try {
+        setStatus("inizializzo DB…");
+        await openDb();
+        logLine("✅ DB CRM inizializzato");
+        setStatus("pronto.");
+      } catch (e) {
+        console.error(e);
+        logLine("❌ DB error: " + (e?.message || e));
+        setStatus("errore.");
+      }
+    };
+
+    // -----------------------
+    // Manual client create
+    // -----------------------
+    document.getElementById("btnAddClient").onclick = async () => {
+      try {
+        const name = (document.getElementById("inpName").value || "").trim();
+        if (!name) {
+          logLine("⚠️ Inserisci un nome cliente.");
+          return;
+        }
+
+        const client = {
+          id: uuid(),
+          code: generatePW(),
+          ownerId: currentUser.id,
+          externalKey: makeExternalKey({ "Anagrafica": name, "Comune": "", "Dt Nasc.": "" }),
+          name,
+          comune: null,
+          nascita: null,
+          ultimaPolizzaNoAuto: null,
+          buckets: null,
+          createdAt: new Date().toISOString()
+        };
+
+        await addClient(client);
+        document.getElementById("inpName").value = "";
+        logLine(`👤 Creato cliente <strong>${client.name}</strong> — <code>${client.code}</code>`);
+        await renderClients();
+      } catch (e) {
+        console.error(e);
+        logLine(`❌ Errore creazione cliente: <code>${e?.message || e}</code>`);
+      }
+    };
+
+function splitNameFromAnagrafica(raw) {
+  const s = (raw || "").toString().trim().replace(/\s+/g, " ");
+  if (!s) return "";
+
+  // taglia quando sembra iniziare un indirizzo
+  const markers = [" via ", " viale ", " corso ", " piazza ", " p.zza ", " p.le ", " largo ", " loc ", " località "];
+  const lower = " " + s.toLowerCase() + " ";
+
+  let cut = s.length;
+  for (const m of markers) {
+    const i = lower.indexOf(m);
+    if (i > 0) cut = Math.min(cut, i - 1); // -1 per compensare lo spazio aggiunto
+  }
+
+  const nameOnly = s.slice(0, cut).trim();
+  return nameOnly || s;
+}
+
+   // -----------------------
+// Import Excel (group + dedup)
+// -----------------------
+document.getElementById("btnImportExcel").onclick = async () => {
+  const inp = document.getElementById("fileExcel");
+  const file = inp.files && inp.files[0];
+  if (!file) {
+    logLine("⚠️ Seleziona prima un file Excel (.xlsx).");
+    return;
+  }
+
+  try {
+    setStatus("lettura excel…");
+    logLine(`📄 Import Excel: <strong>${file.name}</strong>`);
+
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { type: "array" });
+    const sheetName = wb.SheetNames[0];
+    const ws = wb.Sheets[sheetName];
+    const rows = XLSX.utils.sheet_to_json(ws, { defval: null });
+
+    // ✅ Forward-fill: Anagrafica/Dt Nasc./Affidatario
+    let lastAnagrafica = null;
+    let lastNascita = null;
+    let lastAffidatario = null;
+
+    for (const r of rows) {
+      const a = (r["Anagrafica"] ?? "").toString().trim();
+      const n = (r["Dt Nasc."] ?? "").toString().trim();
+      const f = (r["Affidatario"] ?? "").toString().trim();
+
+      if (a) lastAnagrafica = a;
+      if (n) lastNascita = n;
+      if (f) lastAffidatario = f;
+
+      if (!a && lastAnagrafica) r["Anagrafica"] = lastAnagrafica;
+      if (!n && lastNascita) r["Dt Nasc."] = lastNascita;
+      if (!f && lastAffidatario) r["Affidatario"] = lastAffidatario;
+    }
+
+    const ownerCol = "Affidatario";
+
+    logLine(`✅ Foglio: <strong>${sheetName}</strong> — righe: <strong>${rows.length}</strong>`);
+    if (!rows.length) {
+      logLine("⚠️ Nessuna riga da importare.");
+      setStatus("pronto.");
+      return;
+    }
+
+    const cols = rows[0] ? Object.keys(rows[0]) : [];
+    logLine(`🧾 Colonne (${cols.length}): <code>${cols.join(" | ")}</code>`);
+
+    setStatus("raggruppo per cliente…");
+
+    const groups = new Map();
+    let skipped = 0;
+
+    for (const r of rows) {
+      const anag = (r["Anagrafica"] ?? "").toString().trim();
+      if (!anag) { skipped++; continue; }
+      const key = makeExternalKey(r);
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(r);
+    }
+
+    logLine(`👥 Clienti unici nel file: <strong>${groups.size}</strong>`);
+    setStatus("import clienti…");
+
+    let created = 0, dup = 0, merged = 0, errors = 0;
+
+    for (const [key, list] of groups.entries()) {
+      const first = list[0];
+      const rawAna = (first["Anagrafica"] ?? "").toString().trim();
+      const name = splitNameFromAnagrafica(rawAna);
+
+      const pick = (field) => {
+        for (let i = list.length - 1; i >= 0; i--) {
+          const v = list[i][field];
+          if (v !== null && v !== undefined && v !== "") return v;
+        }
+        return null;
+      };
+
+      const client = {
+        id: uuid(),
+        code: generatePW(),
+        ownerId: canonUserId((first[ownerCol] ?? "").toString()) || canonUserId(currentUser.id),
+        externalKey: key,
+        name,
+        comune: first["Comune"] ?? null,
+        nascita: first["Dt Nasc."] ?? null,
+        professione: pick("Professione"),
+        telefono: pick("Telefono"),
+        cellulare: pick("Cellulare"),
+        ultimaPolizzaNoAuto: pick("Ultima Polizza NO Auto"),
+        buckets: {
+          risparmio: pick("Risparmio"),
+          protection: pick("Protection"),
+          previdenza: pick("Previdenza"),
+          investimento: pick("Investimento"),
+          auto: pick("Auto"),
+          dna: pick("DNA"),
+          garanzie: {
+            benessere: pick("di cui Garanzia BENESSERE"),
+            salute: pick("di cui Garanzia SALUTE"),
+            armonia: pick("di cui Garanzia ARMONIA"),
+            casa: pick("di cui Garanzia CASA"),
+            tutela: pick("di cui Garanzia TUTELA"),
+          }
+        },
+        source: { excelRows: list.length },
+        createdAt: new Date().toISOString()
+      };
+
+      try {
+        await addClient(client);
+        created++;
+      } catch (e) {
+        const msg = (e?.message || e?.name || "").toString().toLowerCase();
+        const isDup = msg.includes("constraint") || msg.includes("unique") || (e && e.name === "ConstraintError");
+
+        if (isDup) {
+          dup++;
+
+          // ---- MERGE SAFE SU DUPLICATI (minimo, deterministico) ----
+          const existing = await getClientByExternalKey(key);
+          if (!existing) continue;
+
+          const patchIfEmpty = (field, value) => {
+            const cur = existing[field];
+            const empty = cur === null || cur === undefined || String(cur).trim() === "";
+            const hasValue = value !== null && value !== undefined && String(value).trim() !== "";
+            if (empty && hasValue) { existing[field] = value; return true; }
+            return false;
+          };
+
+          let changed = false;
+
+          // ownerId: SOLO se mancante (mai sovrascrivere)
+         const safeOwnerRaw = (first[ownerCol] ?? "").toString().trim();
+const safeOwner = canonUserId(safeOwnerRaw);
+
+// ownerId: SOLO se mancante, e SOLO se il valore è "sensato"
+const badOwner = !safeOwner || safeOwner === "0" || safeOwner === "-" || safeOwner === "N/A" || safeOwner === "NA" || safeOwner === "NON ASSEGNATO";
+if (!existing.ownerId && !badOwner) {
+  existing.ownerId = safeOwner;
+  changed = true;
+}
+ 
+
+          // campi Persona: aggiorna solo se vuoti
+          changed = patchIfEmpty("professione", first["Professione"] ?? null) || changed;
+          changed = patchIfEmpty("telefono", first["Telefono"] ?? null) || changed;
+          changed = patchIfEmpty("cellulare", first["Cellulare"] ?? null) || changed;
+          changed = patchIfEmpty("nascita", first["Dt Nasc."] ?? null) || changed;
+
+          if (changed) {
+            await putClient(existing);
+            merged++;
+          }
+
+          continue;
+        }
+
+        errors++;
+        if (errors === 1) logLine(`❌ Primo errore: <code>${e?.message || e?.name || e}</code>`);
+        console.error(e, client);
+      }
+    }
+
+    // max 3 log essenziali
+    logLine(`📊 Import completato — creati: <strong>${created}</strong>, duplicati: <strong>${dup}</strong>, merge: <strong>${merged}</strong>, saltati: <strong>${skipped}</strong>, errori: <strong>${errors}</strong>`);
+    if (merged) console.log("[IMPORT] merged duplicati:", merged);
+    if (errors) console.warn("[IMPORT] errori:", errors);
+
+    await renderClients();
+    setStatus("pronto.");
+  } catch (e) {
+    console.error(e);
+    logLine(`❌ Import fallito: <code>${e?.message || e}</code>`);
+    setStatus("errore.");
+  }
+};
+
+    // -----------------------
+    // Clients list
+    // -----------------------
+    async function renderClients() {
+  // ✅ NON bypassare ACL: prendi solo i clienti visibili per policy
+  const visible = await getVisibleClients(currentUser);
+
+  logLine(`👥 Clienti visibili per <code>${currentUser.role}</code>: <strong>${visible.length}</strong>`);
+
+  clientsEl.innerHTML = "";
+  const owners = new Set(visible.map(c => c.ownerId || "-"));
+  logLine(`🧪 OwnerId distinti nei visibili: <strong>${owners.size}</strong> (esempio: <code>${Array.from(owners).slice(0,5).join(", ")}</code>)`);
+
+  visible.forEach(c => {
+    const div = document.createElement("div");
+    div.className = "item";
+    const full = canSeeFull(currentUser, c);
+    const editable = canEdit(currentUser, c);
+
+    const ownerTxt = (c.ownerId || "-");
+    const base = `👤 <strong>${c.name}</strong> <span class="muted">Consulente: ${ownerTxt}</span>`;
+
+    if (!full) {
+      div.innerHTML = `
+        ${base}
+        <br><span class="muted">🔒 Dati limitati (cliente non tuo)</span>
+        <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
+  <button class="btn btn-open">Apri scheda</button>
+  <button class="btn btn-edit" ${editable ? "" : "disabled"}>Modifica</button>
+  <button class="btn btn-persona">Analisi Persona</button>
+  <button class="btn btn-azienda">Analisi Azienda</button>
+</div>
+
+      `;
+    } else {
+      div.innerHTML = `
+        ${base} — <code>${c.code}</code>
+        <br><span class="muted">
+          Comune: ${c.comune ?? "-"} | Nascita: ${formatBirth(c.nascita)} | Ultima NO Auto: ${c.ultimaPolizzaNoAuto ?? "-"}
+        </span>
+        <br><span class="muted">
+          Permessi: ${editable ? "✏️ modificabile" : "👀 sola lettura"}
+        </span>
+        <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
+  <button class="btn btn-open">Apri scheda</button>
+  <button class="btn btn-edit" ${editable ? "" : "disabled"}>Modifica</button>
+  <button class="btn btn-persona">Analisi Persona</button>
+  <button class="btn btn-azienda">Analisi Azienda</button>
+</div>
+
+      `;
+    }
+
+    const btnOpen = div.querySelector(".btn-open");
+const btnEdit = div.querySelector(".btn-edit");
+
+if (btnOpen) {
+  btnOpen.onclick = () => {
+    logLine(`🔎 Scheda aperta: <strong>${c.name}</strong> — consulente: <code>${c.ownerId || "-"}</code> — ${full ? "COMPLETA" : "LIMITATA"}`);
+  };
+}
+
+if (btnEdit) {
+  btnEdit.onclick = () => {
+    const ok = canEdit(currentUser, c);
+    if (!ok) {
+      logLine(`⛔ BLOCCATO: non puoi modificare <strong>${c.name}</strong> (consulente: <code>${c.ownerId || "-"}</code>)`);
+      return;
+    }
+    logLine(`✏️ Modifica CONSENTITA: <strong>${c.name}</strong> (consulente: <code>${c.ownerId || "-"}</code>)`);
+  };
+}
+
+/* 👇 INCOLLI QUI */
+const btnPersona = div.querySelector(".btn-persona");
+const btnAzienda = div.querySelector(".btn-azienda");
+
+function setHandoff(kind, client) {
+  const payload = {
+    kind,
+    ts: Date.now(),
+    actor: { id: currentUser.id, role: currentUser.role },
+    client: {
+      id: client.id,
+      name: client.name || "",
+      code: client.code || "",
+      ownerId: client.ownerId || "",
+      externalKey: client.externalKey || ""
+    }
+  };
+  localStorage.setItem("GBA_ANALYSIS_HANDOFF_V1", JSON.stringify(payload));
+}
+
+if (btnPersona) {
+  btnPersona.onclick = () => {
+    setHandoff("PERSONA", c);
+    location.href = "../apps/persona/PERSONA.html";
+  };
+}
+
+if (btnAzienda) {
+  btnAzienda.onclick = () => {
+    setHandoff("AZIENDA", c);
+    location.href = "../apps/azienda/INDEX.html";
+  };
+}
+/* 👆 FIN QUI */
+
+clientsEl.appendChild(div);
+});
+
+
+  // Popola dropdown Task (coerente: solo clienti visibili)
+  fillTaskClientSelect(visible || []);
+}
+
+
+    // -----------------------
+    // MIGRAZIONE ownerId (one-shot)
+    // -----------------------
+    async function migrateOwnerIfMissing() {
+      const all = await getAllClients();
+      let fixed = 0;
+
+      for (const c of all) {
+        if (!c.ownerId) {
+          c.ownerId = currentUser.id;
+          await putClient(c);
+          fixed++;
+        }
+      }
+
+      if (fixed > 0) logLine(`🔧 Migrazione ownerId completata — aggiornati: ${fixed}`);
+    }
+
+    // -----------------------
+    // ALERT MVP (persistenti) - solo visibili
+    // -----------------------
+    document.getElementById("btnCalcAlerts").onclick = async () => {
+      logLine("🚨 Calcolo alert MVP (persistenti)…");
+
+      const all = await getVisibleClients(currentUser);
+      let createdOrUpdated = 0;
+
+      for (const c of all) {
+        const b = c.buckets || {};
+        const hasAuto = truthy(b.auto);
+        const hasProtection = truthy(b.protection);
+        const hasNoAutoPol = truthy(c.ultimaPolizzaNoAuto);
+
+        const candidates = [];
+        if (hasAuto && !hasProtection) candidates.push({ type: "SOLO_AUTO", title: "Solo Auto (manca Protection)" });
+        if (!hasProtection) candidates.push({ type: "NO_PROTECTION", title: "No Protection" });
+        if (!hasNoAutoPol) candidates.push({ type: "DORMIENTE_NO_AUTO", title: "Dormiente NO Auto" });
+
+        for (const a of candidates) {
+          const key = alertKey(c.id, a.type);
+
+          await upsertAlert({
+            id: uuid(),
+            key,
+            clientId: c.id,
+            type: a.type,
+            status: "active",
+            title: a.title,
+            payload: {
+              name: c.name,
+              comune: c.comune ?? null,
+              nascita: c.nascita ?? null,
+              buckets: c.buckets ?? null,
+              ultimaPolizzaNoAuto: c.ultimaPolizzaNoAuto ?? null
+            }
+          });
+
+          createdOrUpdated++;
+        }
+      }
+
+      await appendAudit({
+        id: uuid(),
+        type: "ALERTS_CALCULATED",
+        actor: currentUser.id,
+        entityType: "alerts",
+        entityId: "bulk",
+        data: { createdOrUpdated }
+      });
+
+      const active = await getAlertsByStatus("active");
+      logLine(`📌 Alert attivi in DB: <strong>${active.length}</strong> (scritti/aggiornati ora: <strong>${createdOrUpdated}</strong>)`);
+    };
+
+    document.getElementById("btnClearAlerts").onclick = async () => {
+      const active = await getAlertsByStatus("active");
+      let dismissed = 0;
+
+      for (const a of active) {
+        const ok = await dismissAlertByKey(a.key);
+        if (ok) dismissed++;
+      }
+
+      await appendAudit({
+        id: uuid(),
+        type: "ALERTS_DISMISSED_ALL",
+        actor: currentUser.id,
+        entityType: "alerts",
+        entityId: "bulk",
+        data: { dismissed }
+      });
+
+      logLine(`🧹 Alert disattivati: <strong>${dismissed}</strong> (restano in DB come dismissed)`);
+    };
+
+    document.getElementById("btnShowAlerts").onclick = async () => {
+      logEl.innerHTML = "";
+      await renderActiveAlerts();
+    };
+
+    async function renderActiveAlerts() {
+      const active = await getAlertsByStatus("active");
+
+      const byClient = new Map();
+      const weight = (type) => {
+        if (type === "SOLO_AUTO") return 80;
+        if (type === "NO_PROTECTION") return 60;
+        if (type === "DORMIENTE_NO_AUTO") return 40;
+        return 10;
+      };
+
+      for (const a of active) {
+        const cid = a.clientId;
+        if (!byClient.has(cid)) {
+          byClient.set(cid, {
+            clientId: cid,
+            name: a.payload?.name || cid,
+            comune: a.payload?.comune || "",
+            items: [],
+            score: 0,
+          });
+        }
+        const g = byClient.get(cid);
+        g.items.push(a);
+        g.score += weight(a.type);
+      }
+
+      const ranked = Array.from(byClient.values()).sort((x, y) => y.score - x.score);
+
+      logEl.innerHTML = "";
+      logLine(`📋 Clienti con alert attivi: <strong>${ranked.length}</strong> (mostro top 50 per priorità)`);
+
+      const top = ranked.slice(0, 50);
+
+      top.forEach(group => {
+        const types = Array.from(new Set(group.items.map(i => i.type)));
+        const labels = types.map(t => {
+          if (t === "SOLO_AUTO") return "Solo Auto";
+          if (t === "NO_PROTECTION") return "No Protection";
+          if (t === "DORMIENTE_NO_AUTO") return "Dormiente NO Auto";
+          return t;
+        });
+
+        const div = document.createElement("div");
+        div.className = "item";
+        div.innerHTML = `
+          ⚠️ <strong>${group.name}</strong>
+          <span class="muted">${group.comune ? " — " + group.comune : ""}</span><br>
+          <span class="muted">Motivi: ${labels.join(", ")} | Score: ${group.score}</span>
+          <button class="btn" style="margin-left:10px">Disattiva tutti</button>
+        `;
+
+        div.querySelector("button").onclick = async () => {
+          let dismissed = 0;
+          for (const a of group.items) {
+            const ok = await dismissAlertByKey(a.key);
+            if (ok) dismissed++;
+          }
+
+          await appendAudit({
+            id: uuid(),
+            type: "ALERTS_DISMISSED_CLIENT",
+            actor: currentUser.id,
+            entityType: "client",
+            entityId: group.clientId,
+            data: { dismissed, reasons: labels }
+          });
+
+          logLine(`🧹 Disattivati ${dismissed} alert per <strong>${group.name}</strong>`);
+          renderActiveAlerts();
+        };
+
+        logEl.appendChild(div);
+      });
+
+      if (ranked.length > top.length) {
+        logLine(`… altri <strong>${ranked.length - top.length}</strong> clienti con alert.`);
+      }
+    }
+
+    // -----------------------
+    // BOOT
+    // -----------------------
+    (async () => {
+      await openDb();
+      logLine(`👤 Utente attivo: <strong>${currentUser.id}</strong> — ruolo: <code>${currentUser.role}</code>`);
+      await migrateOwnerIfMissing();
+      await renderClients();
+    })();
+  </script>
+</body>
+</html>
