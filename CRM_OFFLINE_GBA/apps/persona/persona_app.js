@@ -1139,6 +1139,8 @@ function renderCopertureAttiveV2() {
         const noteVal = rec.note != null ? String(rec.note) : "";
         const capitaleVal = rec.capitaleEuro != null ? String(rec.capitaleEuro) : "";
       const isTCM = item.key === "tcm";
+       const isInfortuni = item.key === "infortuni";
+const labelCapitale = isInfortuni ? "Capitale IP (€)" : "Capitale assicurato (€)";
         const showAltro = (compagniaVal === "Altro") ? "" : "display:none;";
 
         html += `
@@ -1179,9 +1181,9 @@ function renderCopertureAttiveV2() {
                             <label>Scadenza</label>
                             <input type="date" class="coperturaV2Scadenza" data-copertura-key="${item.key}" value="${scadenzaVal}" />
                         </div>
-${isTCM ? `
+${(isTCM || isInfortuni) ? `
 <div>
-    <label>Capitale assicurato (€)</label>
+    <label>${labelCapitale}</label>
     <input type="number"
            min="0"
            step="1000"
