@@ -4452,7 +4452,7 @@ function vaiDomandaSuccessivaPersona() {
     window.__PERSONA_NEXT_LOCK__ = false;
   }
 }
-}
+
 
 
 
