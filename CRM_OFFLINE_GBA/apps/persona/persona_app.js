@@ -5060,10 +5060,10 @@ function renderPrioritaProdottiPersona(prioritaProdotti) {
                 </div>
                 <div style="font-size:11px; color:#4b5563;">${p.livello}</div>
                 ${
-                    p.notaConsulente
-                        ? `<div style="font-size:11px; color:#6b7280;">${p.notaConsulente}</div>`
-                        : ""
-                }
+  (p.notaConsulente || p.nota || p.note)
+    ? `<div style="font-size:11px; color:#6b7280;">${p.notaConsulente || p.nota || p.note}</div>`
+    : ""
+}
             </div>
         `;
     }).join("");
