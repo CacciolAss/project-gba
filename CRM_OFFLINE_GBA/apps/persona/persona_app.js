@@ -4188,51 +4188,6 @@ function selezionaRispostaPersona(questionId, value) {
         }
     }
 
-    /* ==========================================
-       REGOLA LIVE 4: A2 vs B3 (autonomia vs riserva)
-       A2 = autonomia del nucleo se smetti di lavorare
-       B3 = mesi coperti dalla riserva di sicurezza
-    ========================================== */
-    if (questionId === "B3") {
-        const a2Raw =
-            appStatePersona.questionnaire &&
-            appStatePersona.questionnaire.answers
-                ? appStatePersona.questionnaire.answers["A2"]
-                : null;
-
-        const a2 = a2Raw != null ? Number(a2Raw) : null;
-        const b3 = valoreNumerico;
-
-        // Caso incoerente:
-        // A2 molto alta (≥4: 6-12 mesi o >12 mesi)
-        // B3 molto bassa (≤2: <1 mese o 1-3 mesi)
-        if (
-            a2 != null &&
-            !Number.isNaN(a2) &&
-            !Number.isNaN(b3) &&
-            a2 >= 4 &&
-            b3 <= 2
-        ) {
-            const msg =
-                "Attenzione: in una domanda precedente hai indicato che la famiglia potrebbe " +
-                "mantenere il tenore di vita per almeno 6 mesi se smettessi di lavorare (A2 alta), " +
-                "ma qui dichiari una riserva di sicurezza molto bassa (meno di 3 mesi).\n\n" +
-                "Vuoi confermare comunque questa risposta su B3?";
-
-            const conferma = window.confirm(msg);
-            if (!conferma) {
-                // Non salvo la risposta, non autosave, non vado avanti
-                return;
-            }
-
-            if (typeof mostraToast === "function") {
-                mostraToast(
-                    "Combinazione A2/B3 confermata nonostante la forte incoerenza autonomia/riserve.",
-                    "warning"
-                );
-            }
-        }
-    }
 
     /* ==========================================
        REGOLA LIVE 4: A4 vs B5 (SSN vs rischio fisico)
@@ -4307,58 +4262,6 @@ function selezionaRispostaPersona(questionId, value) {
                 if (typeof mostraToast === "function") {
                     mostraToast(
                         "Combinazione A2/B3 confermata nonostante la potenziale incoerenza autonomia/riserva.",
-                        "warning"
-                    );
-                }
-            }
-        }
-    }
-
-    /* ==========================================
-       REGOLA LIVE: B8 vs professione anagrafica
-       B8 = "Quanto consideri rischioso il tuo lavoro attuale?"
-    ========================================== */
-    if (questionId === "B8") {
-        const nuovoB8 = valoreNumerico;
-
-        const ana =
-            (appStatePersona.user && appStatePersona.user.anagrafica) || {};
-        const professione = (ana.professione || "").toLowerCase().trim();
-
-        if (
-            !Number.isNaN(nuovoB8) &&
-            nuovoB8 >= 4 &&              // ha indicato lavoro abbastanza/molto rischioso
-            professione
-        ) {
-            const lowRiskKeywords = [
-                "assicur",
-                "impiegat",
-                "amministrativ",
-                "back office",
-                "ufficio",
-                "banc",
-                "sportello",
-                "consulente"
-            ];
-
-            const professioneBassoRischio = lowRiskKeywords.some((k) =>
-                professione.includes(k)
-            );
-
-            if (professioneBassoRischio) {
-                const msg =
-                    "In anagrafica hai indicato una professione tipicamente a basso rischio fisico/economico (es. attività d'ufficio o consulenziale), " +
-                    "ma in questa risposta stai valutando il lavoro come 'abbastanza' o 'molto' rischioso (B8).\n\n" +
-                    "Vuoi confermare comunque questa valutazione di rischio sul lavoro?";
-
-                const conferma = window.confirm(msg);
-                if (!conferma) {
-                    return;
-                }
-
-                if (typeof mostraToast === "function") {
-                    mostraToast(
-                        "Valutazione di rischio lavoro confermata nonostante la professione a basso rischio.",
                         "warning"
                     );
                 }
