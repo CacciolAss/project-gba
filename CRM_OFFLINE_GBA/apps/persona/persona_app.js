@@ -4373,6 +4373,7 @@ function vaiDomandaSuccessivaPersona() {
         return;
     }
 // ✅ GATE ANAGRAFICA MINIMA (anti-analisi vuote)
+leggiAnagraficaPersona(); // sync UI -> appState prima del gate   
 const ana = appStatePersona.user?.anagrafica || {};
 const nome = (ana.nome || "").toString().trim();
 const cognome = (ana.cognome || "").toString().trim();
