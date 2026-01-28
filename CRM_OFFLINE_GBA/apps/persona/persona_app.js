@@ -3013,7 +3013,8 @@ function calcolaPrioritaProdottiPersona(risultati) {
             livello,
             coloreSemaforo: colore,
             motivoSemaforo,
-            note: notaConsulente
+              notaConsulente: notaConsulente,
+  note: notaConsulente, // alias backward compat
         };
     });
 
@@ -5194,16 +5195,19 @@ function costruisciNarrativaMetodoRossoPersona(risultati) {
         }
     });
 
-    // Progetto: priorità prodotti per orizzonte temporale
+    // Progetto: priorità prodotti per orizzonte temporale (allineato a score/livello reali)
     const urgenti = priorita
-        .filter(p => p && typeof p.livello === "string" && p.livello.indexOf("Urgente") !== -1)
+        .filter(p => p && typeof p.score === "number" && p.score >= 80)
         .slice(0, 3);
+
     const medie = priorita
-        .filter(p => p && typeof p.livello === "string" && p.livello.indexOf("Media") !== -1)
+        .filter(p => p && typeof p.score === "number" && p.score >= 65 && p.score < 80)
         .slice(0, 2);
+
     const basse = priorita
-        .filter(p => p && typeof p.livello === "string" && p.livello.indexOf("Bassa") !== -1)
+        .filter(p => p && typeof p.score === "number" && p.score < 65)
         .slice(0, 2);
+
 
     if (urgenti.length) {
         const nomi = urgenti.map(p => p.nome || p.key).join(", ");
