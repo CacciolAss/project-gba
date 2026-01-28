@@ -1761,7 +1761,61 @@ if (revINPS.eligible === false) {
     gap.morte.copertura = coperturaMorte;
     gap.morte.gap = Math.max(0, gap.morte.adeguato - gap.morte.copertura);
 
-    // ======================
+   // ======================
+// TCM ATTIVA (COPERTURE ATTIVE V2)
+// ======================
+
+// Lettura capitale TCM inserito manualmente (se presente)
+let capitaleTCM = null;
+try {
+    const copV2 = appStatePersona?.user?.copertureAttiveV2 || {};
+    const tcm = copV2.tcm || null;
+    const cap = tcm && tcm.capitaleEuro != null ? Number(tcm.capitaleEuro) : null;
+    if (isFinite(cap) && cap > 0) {
+        capitaleTCM = cap;
+    }
+} catch (e) {
+    capitaleTCM = null;
+}
+
+// Ricalcolo gap morte considerando TCM privata
+const coperturaTotaleMorte = gap.morte.copertura + (capitaleTCM || 0);
+const gapResiduoMorte = Math.max(0, gap.morte.adeguato - coperturaTotaleMorte);
+
+// Stato rischio morte (logico, non UI)
+let statoMorte = "INDETERMINATO";
+
+// Caso 1: fabbisogno zero → adeguato by definition
+if (gap.morte.adeguato === 0) {
+    statoMorte = "ADEGUATO";
+}
+// Caso 2: capitale TCM assente → dati mancanti
+else if (capitaleTCM == null) {
+    statoMorte = "INDETERMINATO";
+}
+// Caso 3: copertura sufficiente
+else if (gapResiduoMorte === 0) {
+    statoMorte = "ADEGUATO";
+}
+// Caso 4: copertura insufficiente
+else {
+    statoMorte = "INADEGUATO";
+}
+
+// Override valori morte con residuo reale
+gap.morte.copertura = coperturaTotaleMorte;
+gap.morte.gap = gapResiduoMorte;
+
+// Telemetria controllata
+console.log("🧮 TCM / RISCHIO MORTE:", {
+    capitaleTCM,
+    adeguato: gap.morte.adeguato,
+    coperturaTotaleMorte,
+    gapResiduoMorte,
+    statoMorte
+});
+ 
+   // ======================
     // INVALIDITÀ
     // ======================
     const normInvalidita = norm && norm.invalidita ? norm.invalidita : null;
@@ -1948,10 +2002,11 @@ const coperturaInvaliditaStato = Math.min(
 
     return {
         indiceCopertura,
-        morte: {
+morte: {
     statale: gap.morte.copertura,
     adeguato: gap.morte.adeguato,
     gap: gap.morte.gap,
+    stato: statoMorte,
     nota: (typeof notaMorteINPS === "string" && notaMorteINPS) ? notaMorteINPS : ""
 },
 
