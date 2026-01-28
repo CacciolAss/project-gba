@@ -4364,15 +4364,25 @@ function vaiDomandaSuccessivaPersona() {
         };
     }
 
-    let idx = 0;
-    if (typeof appStatePersona.dynamic.indiceCorrente === "number") {
-        idx = appStatePersona.dynamic.indiceCorrente;
-    } else if (typeof appStatePersona.questionnaire.currentIndex === "number") {
-        idx = appStatePersona.questionnaire.currentIndex;
-    }
+let idx = 0;
+if (typeof appStatePersona.dynamic.indiceCorrente === "number") {
+    idx = appStatePersona.dynamic.indiceCorrente;
+} else if (typeof appStatePersona.questionnaire.currentIndex === "number") {
+    idx = appStatePersona.questionnaire.currentIndex;
+}
 
-    const domanda = domande[idx];
-    if (!domanda) return;
+// ✅ Clamp indice: se cambia profilo/domande, evita UI “morta”
+if (idx < 0) idx = 0;
+if (idx > domande.length - 1) idx = domande.length - 1;
+appStatePersona.dynamic.indiceCorrente = idx;
+appStatePersona.questionnaire.currentIndex = idx;
+
+const domanda = domande[idx];
+if (!domanda) {
+    console.warn("⛔ Domanda non trovata per idx:", idx, "len:", domande.length, domande);
+    return;
+}
+
 
     const risposta = appStatePersona.questionnaire.answers[domanda.id];
     if (risposta == null) {
