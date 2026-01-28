@@ -4372,6 +4372,19 @@ function vaiDomandaSuccessivaPersona() {
         mostraToast("Rispondi alla domanda prima di proseguire.", "warning");
         return;
     }
+// ✅ GATE ANAGRAFICA MINIMA (anti-analisi vuote)
+const ana = appStatePersona.user?.anagrafica || {};
+const nome = (ana.nome || "").toString().trim();
+const cognome = (ana.cognome || "").toString().trim();
+const cf = (ana.codiceFiscale || "").toString().trim().toUpperCase();
+const dataNascita = (ana.dataNascita || "").toString().trim();
+
+const hasMinAnag = !!nome && !!cognome && (!!cf || !!dataNascita);
+
+if (!hasMinAnag) {
+    mostraToast("Compila anagrafica minima: Nome, Cognome e (Codice Fiscale oppure Data di nascita).", "warning");
+    return;
+}
 
     if (idx < domande.length - 1) {
         idx++;
