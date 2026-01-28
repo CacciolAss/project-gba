@@ -4339,6 +4339,13 @@ function selezionaRispostaPersona(questionId, value) {
 
 
 function vaiDomandaSuccessivaPersona() {
+     // GUARD anti-doppio trigger (click multipli / listener duplicati)
+    if (window.__PERSONA_NEXT_LOCK__) {
+        console.warn("⛔ vaiDomandaSuccessivaPersona bloccata (double-trigger).");
+        return;
+    }
+    window.__PERSONA_NEXT_LOCK__ = true;
+    setTimeout(() => { window.__PERSONA_NEXT_LOCK__ = false; }, 250);
     const domande = getDomandePersona();
     if (!domande.length) return;
 
