@@ -4453,9 +4453,6 @@ function vaiDomandaSuccessivaPersona() {
   }
 }
 
-
-
-
 function vaiDomandaPrecedentePersona() {
     const domande = getDomandePersona();
     if (!domande.length) return;
