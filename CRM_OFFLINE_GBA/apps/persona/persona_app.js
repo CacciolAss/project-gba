@@ -653,8 +653,15 @@ function leggiAnagraficaPersona() {
         return num != null ? num : null;
     };
 
-    const nome = getVal("nome");
-    const cognome = getVal("cognome");
+ // ✅ LETTURA NOME/COGNOME (ID reali in pagina)
+const nomeEl = document.getElementById("nome");
+const cognomeEl = document.getElementById("cognome");
+
+const nome = (nomeEl && typeof nomeEl.value === "string") ? nomeEl.value.trim() : "";
+const cognome = (cognomeEl && typeof cognomeEl.value === "string") ? cognomeEl.value.trim() : "";
+
+// Se hai già variabili nome/cognome, sovrascrivile con questi valori
+
     const codiceFiscaleRaw = getVal("codiceFiscale");
     const codiceFiscale = (codiceFiscaleRaw || "").toUpperCase();
 
