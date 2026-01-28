@@ -6422,6 +6422,12 @@ async function loadNormativaInfortuniPersona() {
    INIT APP PERSONA
 ========================= */
 function initPersonaApp() {
+       // HARD GUARD: evita doppia inizializzazione (listener duplicati / doppio include)
+    if (window.__PERSONA_APP_INITED__ === true) {
+        console.warn("⚠️ Persona init già eseguito: skip");
+        return;
+    }
+    window.__PERSONA_APP_INITED__ = true;
     initLoginPersona();
 
     // Inizializza UI polizze LEGACY solo se il blocco è realmente attivo (in V2 è nascosto)
