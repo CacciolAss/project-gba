@@ -4342,101 +4342,115 @@ function selezionaRispostaPersona(questionId, value) {
     renderDomandaCorrentePersona();
 }
 
-
-
-
 function vaiDomandaSuccessivaPersona() {
-     // GUARD anti-doppio trigger (click multipli / listener duplicati)
-    if (window.__PERSONA_NEXT_LOCK__) {
-        console.warn("⛔ vaiDomandaSuccessivaPersona bloccata (double-trigger).");
-        return;
+  // GUARD anti-doppio trigger (click multipli / listener duplicati)
+  if (window.__PERSONA_NEXT_LOCK__) {
+    console.warn("⛔ vaiDomandaSuccessivaPersona bloccata (double-trigger).");
+    return;
+  }
+
+  window.__PERSONA_NEXT_LOCK__ = true;
+
+  try {
+    // 1) Sync anagrafica SUBITO (prima di calcolare domande/profilo)
+    if (typeof leggiAnagraficaPersona === "function") {
+      leggiAnagraficaPersona();
     }
-    window.__PERSONA_NEXT_LOCK__ = true;
-    setTimeout(() => { window.__PERSONA_NEXT_LOCK__ = false; }, 250);
+
     const domande = getDomandePersona();
-    if (!domande.length) return;
+    if (!domande.length) {
+      console.warn("⛔ Nessuna domanda disponibile.");
+      return;
+    }
 
     if (!appStatePersona.dynamic) {
-        appStatePersona.dynamic = {
-            contestoPersona: null,
-            domandeVisibili: [],
-            indiceCorrente: 0
-        };
+      appStatePersona.dynamic = {
+        contestoPersona: null,
+        domandeVisibili: [],
+        indiceCorrente: 0
+      };
     }
 
-let idx = 0;
-if (typeof appStatePersona.dynamic.indiceCorrente === "number") {
-    idx = appStatePersona.dynamic.indiceCorrente;
-} else if (typeof appStatePersona.questionnaire.currentIndex === "number") {
-    idx = appStatePersona.questionnaire.currentIndex;
-}
+    let idx = 0;
+    if (typeof appStatePersona.dynamic.indiceCorrente === "number") {
+      idx = appStatePersona.dynamic.indiceCorrente;
+    } else if (typeof appStatePersona.questionnaire.currentIndex === "number") {
+      idx = appStatePersona.questionnaire.currentIndex;
+    }
 
-// ✅ Clamp indice: se cambia profilo/domande, evita UI “morta”
-if (idx < 0) idx = 0;
-if (idx > domande.length - 1) idx = domande.length - 1;
-appStatePersona.dynamic.indiceCorrente = idx;
-appStatePersona.questionnaire.currentIndex = idx;
+    // ✅ Clamp indice: se cambia profilo/domande, evita UI “morta”
+    if (idx < 0) idx = 0;
+    if (idx > domande.length - 1) idx = domande.length - 1;
+    appStatePersona.dynamic.indiceCorrente = idx;
+    appStatePersona.questionnaire.currentIndex = idx;
 
-const domanda = domande[idx];
-if (!domanda) {
-    console.warn("⛔ Domanda non trovata per idx:", idx, "len:", domande.length, domande);
-    return;
-}
-
+    const domanda = domande[idx];
+    if (!domanda) {
+      console.warn("⛔ Domanda non trovata per idx:", idx, "len:", domande.length, domande);
+      return;
+    }
 
     const risposta = appStatePersona.questionnaire.answers[domanda.id];
     if (risposta == null) {
-        mostraToast("Rispondi alla domanda prima di proseguire.", "warning");
-        return;
+      mostraToast("Rispondi alla domanda prima di proseguire.", "warning");
+      return;
     }
-// ✅ GATE ANAGRAFICA MINIMA (anti-analisi vuote)
-leggiAnagraficaPersona(); // sync UI -> appState prima del gate   
-const ana = appStatePersona.user?.anagrafica || {};
-const nome = (ana.nome || "").toString().trim();
-const cognome = (ana.cognome || "").toString().trim();
-const cf = (ana.codiceFiscale || "").toString().trim().toUpperCase();
-const dataNascita = (ana.dataNascita || "").toString().trim();
 
-const hasMinAnag = !!nome && !!cognome && (!!cf || !!dataNascita);
+    // ✅ GATE ANAGRAFICA MINIMA (anti-analisi vuote)
+    const ana = appStatePersona.user?.anagrafica || {};
+    const nome = (ana.nome || "").toString().trim();
+    const cognome = (ana.cognome || "").toString().trim();
+    const cf = (ana.codiceFiscale || "").toString().trim().toUpperCase();
+    const dataNascita = (ana.dataNascita || "").toString().trim();
 
-if (!hasMinAnag) {
-    mostraToast("Compila anagrafica minima: Nome, Cognome e (Codice Fiscale oppure Data di nascita).", "warning");
-    return;
-}
+    const hasMinAnag = !!nome && !!cognome && (!!cf || !!dataNascita);
+    if (!hasMinAnag) {
+      mostraToast(
+        "Compila anagrafica minima: Nome, Cognome e (Codice Fiscale oppure Data di nascita).",
+        "warning"
+      );
+      return;
+    }
 
     if (idx < domande.length - 1) {
-        idx++;
-        appStatePersona.dynamic.indiceCorrente = idx;
-        appStatePersona.questionnaire.currentIndex = idx;
-        renderDomandaCorrentePersona();
-    } else {
-        // Ultima domanda → chiudo il questionario e lancio l’analisi
-        leggiAnagraficaPersona();
-
-        mostraToast("Questionario completato. Calcolo analisi in corso.", "success");
-        console.log("✅ Questionario persona completato:", appStatePersona.questionnaire.answers);
-
-        calcolaRisultatiPersona();
-        renderRisultatiPersona();
-        renderRadarPersona();
-        renderTimelinePersona();
-
-        const risultatiSection = document.getElementById("risultatiPersonaSection");
-        if (risultatiSection) {
-            risultatiSection.scrollIntoView({ behavior: "smooth", block: "start" });
-        }
-
-        if (typeof creaRecordAnalisiPersona === "function" &&
-            typeof aggiungiAnalisiPersonaInArchivio === "function" &&
-            typeof renderArchivioPersona === "function") {
-            const record = creaRecordAnalisiPersona();
-            aggiungiAnalisiPersonaInArchivio(record);
-            renderArchivioPersona();
-            console.log("💾 Analisi persona salvata in archivio.");
-        } else {
-            console.warn("Funzioni archivio persona non disponibili.");
-        }
+      idx++;
+      appStatePersona.dynamic.indiceCorrente = idx;
+      appStatePersona.questionnaire.currentIndex = idx;
+      renderDomandaCorrentePersona();
+      return;
     }
+
+    // Ultima domanda → chiudo il questionario e lancio l’analisi
+    mostraToast("Questionario completato. Calcolo analisi in corso.", "success");
+    console.log("✅ Questionario persona completato:", appStatePersona.questionnaire.answers);
+
+    calcolaRisultatiPersona();
+    renderRisultatiPersona();
+    renderRadarPersona();
+    renderTimelinePersona();
+
+    const risultatiSection = document.getElementById("risultatiPersonaSection");
+    if (risultatiSection) {
+      risultatiSection.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    if (
+      typeof creaRecordAnalisiPersona === "function" &&
+      typeof aggiungiAnalisiPersonaInArchivio === "function" &&
+      typeof renderArchivioPersona === "function"
+    ) {
+      const record = creaRecordAnalisiPersona();
+      aggiungiAnalisiPersonaInArchivio(record);
+      renderArchivioPersona();
+      console.log("💾 Analisi persona salvata in archivio.");
+    } else {
+      console.warn("Funzioni archivio persona non disponibili.");
+    }
+  } finally {
+    // ✅ sblocco SEMPRE, anche su return/errore
+    window.__PERSONA_NEXT_LOCK__ = false;
+  }
+}
 }
 
 
