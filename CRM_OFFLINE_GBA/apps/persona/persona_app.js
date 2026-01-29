@@ -801,10 +801,17 @@ try {
 
     console.log("📇 Anagrafica persona letta:", appStatePersona.user.anagrafica);
 
-    // Autosave bozza analisi persona
-    if (typeof salvaBozzaAnalisiPersona === "function") {
-        salvaBozzaAnalisiPersona();
-    }
+// Autosave bozza analisi persona (debounce anti-loop / anti-spam)
+if (typeof salvaBozzaAnalisiPersona === "function") {
+    clearTimeout(window.__PERSONA_AUTOSAVE_T__);
+    window.__PERSONA_AUTOSAVE_T__ = setTimeout(() => {
+        try {
+            salvaBozzaAnalisiPersona();
+        } catch (e) {
+            console.warn("⚠️ Errore autosave bozza:", e);
+        }
+    }, 500);
+}
 }
 
 
