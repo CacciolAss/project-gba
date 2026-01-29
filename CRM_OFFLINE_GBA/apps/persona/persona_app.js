@@ -3479,6 +3479,20 @@ appStatePersona.dynamic.indiceCorrente = idx;
     } catch (err) {
         console.warn("Errore nel debug domande visibili persona:", err);
     }
+// ✅ SINGLE SOURCE OF TRUTH: totale domande correnti (evita mismatch UI/navigazione)
+try {
+    const tot = Array.isArray(domandeFinali) ? domandeFinali.length : 0;
+
+    // globale (usabile da UI e navigazione)
+    window.__PERSONA_DOMANDE_TOT__ = tot;
+
+    // state (se serve in altri punti)
+    if (appStatePersona && appStatePersona.dynamic) {
+        appStatePersona.dynamic.__domandeTot = tot;
+    }
+} catch (e) {
+    // no-op
+}
 
     // 6) Cache: se profilo/segmenti non cambiano, riusa domandeFinali (evita loop / reset UI)
 try {
