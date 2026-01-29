@@ -653,20 +653,36 @@ function leggiAnagraficaPersona() {
         return num != null ? num : null;
     };
 
- // ✅ LETTURA NOME/COGNOME (ID reali in pagina)
-const nomeEl = document.getElementById("nome");
-const cognomeEl = document.getElementById("cognome");
+// ✅ LETTURA ROBUSTA (ID variabili in pagina)
+const pickVal = (ids) => {
+  const list = Array.isArray(ids) ? ids : [ids];
+  for (const id of list) {
+    const el = document.getElementById(id);
+    if (el && typeof el.value === "string") {
+      const v = el.value.trim();
+      if (v) return v;
+    }
+  }
+  // fallback: prova anche name=...
+  for (const id of list) {
+    const el = document.querySelector(`[name="${id}"]`);
+    if (el && typeof el.value === "string") {
+      const v = el.value.trim();
+      if (v) return v;
+    }
+  }
+  return "";
+};
 
-const nome = (nomeEl && typeof nomeEl.value === "string") ? nomeEl.value.trim() : "";
-const cognome = (cognomeEl && typeof cognomeEl.value === "string") ? cognomeEl.value.trim() : "";
+const nome = pickVal(["nome", "nomeCliente", "nomePersona", "anagraficaNome"]);
+const cognome = pickVal(["cognome", "cognomeCliente", "cognomePersona", "anagraficaCognome"]);
 
-// Se hai già variabili nome/cognome, sovrascrivile con questi valori
+const codiceFiscaleRaw = pickVal(["codiceFiscale", "cf", "codFiscale", "codice_fiscale"]);
+const codiceFiscale = (codiceFiscaleRaw || "").toUpperCase();
 
-    const codiceFiscaleRaw = getVal("codiceFiscale");
-    const codiceFiscale = (codiceFiscaleRaw || "").toUpperCase();
+let dataNascita = pickVal(["dataNascita", "data_nascita", "birthDate"]);
+let luogoNascita = pickVal(["luogoNascita", "comuneNascita", "cittaNascita"]);
 
-    let dataNascita = getVal("dataNascita");
-    let luogoNascita = getVal("luogoNascita");
 
     // Prefill da CF (solo se il campo dataNascita è vuoto e CF sembra valido)
     if (!dataNascita && codiceFiscale && codiceFiscale.length === 16) {
