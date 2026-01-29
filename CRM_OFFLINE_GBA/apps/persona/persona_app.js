@@ -4400,6 +4400,8 @@ return;
 
     // ✅ GATE ANAGRAFICA MINIMA (anti-analisi vuote)
     const ana = appStatePersona.user?.anagrafica || {};
+    console.log("🧪 GATE ana:", JSON.stringify(ana));
+     
     const nome = (ana.nome || "").toString().trim();
     const cognome = (ana.cognome || "").toString().trim();
     const cf = (ana.codiceFiscale || "").toString().trim().toUpperCase();
