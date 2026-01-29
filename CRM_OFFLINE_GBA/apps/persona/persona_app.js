@@ -4410,22 +4410,57 @@ return;
     }
 
     // ✅ GATE ANAGRAFICA MINIMA (anti-analisi vuote)
-    const ana = appStatePersona.user?.anagrafica || {};
-    console.log("🧪 GATE ana:", JSON.stringify(ana));
-     
-    const nome = (ana.nome || "").toString().trim();
-    const cognome = (ana.cognome || "").toString().trim();
-    const cf = (ana.codiceFiscale || "").toString().trim().toUpperCase();
-    const dataNascita = (ana.dataNascita || "").toString().trim();
+let ana = appStatePersona.user?.anagrafica || {};
+console.log("🧪 GATE ana (state):", JSON.stringify(ana));
 
-    const hasMinAnag = !!nome && !!cognome && (!!cf || !!dataNascita);
-    if (!hasMinAnag) {
-      mostraToast(
-        "Compila anagrafica minima: Nome, Cognome e (Codice Fiscale oppure Data di nascita).",
-        "warning"
-      );
-      return;
+let nome = (ana.nome || "").toString().trim();
+let cognome = (ana.cognome || "").toString().trim();
+let cf = (ana.codiceFiscale || "").toString().trim().toUpperCase();
+let dataNascita = (ana.dataNascita || "").toString().trim();
+
+// Fallback DOM se lo state non è affidabile (caso “stuck” senza refresh)
+if (!nome || !cognome || (!cf && !dataNascita)) {
+  const pickDomVal = (ids) => {
+    const list = Array.isArray(ids) ? ids : [ids];
+    for (const id of list) {
+      const el = document.getElementById(id);
+      if (el && typeof el.value === "string") return el.value.trim();
     }
+    for (const id of list) {
+      const el = document.querySelector(`[name="${id}"]`);
+      if (el && typeof el.value === "string") return el.value.trim();
+    }
+    return "";
+  };
+
+  const domNome = pickDomVal(["nome", "nomeCliente", "nomePersona", "anagraficaNome"]);
+  const domCognome = pickDomVal(["cognome", "cognomeCliente", "cognomePersona", "anagraficaCognome"]);
+  const domCf = pickDomVal(["codiceFiscale", "cf", "codFiscale", "codice_fiscale"]).toUpperCase();
+  const domData = pickDomVal(["dataNascita", "data_nascita", "birthDate"]);
+
+  // Se il DOM ha dati, li porto nello state
+  if (domNome) nome = domNome;
+  if (domCognome) cognome = domCognome;
+  if (domCf) cf = domCf;
+  if (domData) dataNascita = domData;
+
+  // riscrivo lo state (single source of truth)
+  appStatePersona.user = appStatePersona.user || {};
+  appStatePersona.user.anagrafica = { ...(appStatePersona.user.anagrafica || {}), nome, cognome, codiceFiscale: cf, dataNascita };
+  ana = appStatePersona.user.anagrafica;
+
+  console.log("🧪 GATE ana (DOM→state):", JSON.stringify(ana));
+}
+
+const hasMinAnag = !!nome && !!cognome && (!!cf || !!dataNascita);
+if (!hasMinAnag) {
+  mostraToast(
+    "Compila anagrafica minima: Nome, Cognome e (Codice Fiscale oppure Data di nascita).",
+    "warning"
+  );
+  return;
+}
+
 
     if (idx < domande.length - 1) {
       idx++;
