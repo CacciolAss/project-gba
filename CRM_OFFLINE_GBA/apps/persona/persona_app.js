@@ -642,6 +642,9 @@ function risolviLuogoNascitaDaCodiceLuogo(codiceLuogo) {
 ========================= */
 
 function leggiAnagraficaPersona() {
+   // Guard anti-loop: evita ricorsioni quando il codice fa prefill sui campi
+if (window.__PERSONA_PREFILL_BUSY__) return;
+
     const getVal = (id) => {
         const el = document.getElementById(id);
         return el ? el.value.trim() : "";
@@ -691,8 +694,11 @@ let luogoNascita = pickVal(["luogoNascita", "comuneNascita", "cittaNascita"]);
             if (cfInfo && cfInfo.data) {
                 dataNascita = cfInfo.data; // YYYY-MM-DD
                 const elData = document.getElementById("dataNascita");
-                if (elData) elData.value = dataNascita;
-            }
+                if (elData) {
+    window.__PERSONA_PREFILL_BUSY__ = true;
+    elData.value = dataNascita;
+    window.__PERSONA_PREFILL_BUSY__ = false;
+}
         } catch (e) {
             console.warn("⚠️ Prefill dataNascita da CF fallito:", e);
         }
@@ -711,7 +717,11 @@ let luogoNascita = pickVal(["luogoNascita", "comuneNascita", "cittaNascita"]);
             if (comune && comune.n) {
                 luogoNascita = comune.n;
                 const elLN = document.getElementById("luogoNascita");
-                if (elLN && !elLN.value) elLN.value = comune.n;
+                if (elLN && !elLN.value) {
+    window.__PERSONA_PREFILL_BUSY__ = true;
+    elLN.value = comune.n;
+    window.__PERSONA_PREFILL_BUSY__ = false;
+}
             }
         }
     } catch (e) {
@@ -723,7 +733,11 @@ let luogoNascita = pickVal(["luogoNascita", "comuneNascita", "cittaNascita"]);
     if (dataNascita) {
         eta = calcolaEtaDaData(dataNascita);
         const elEta = document.getElementById("eta");
-        if (elEta && !elEta.value) elEta.value = String(eta);
+        if (elEta && !elEta.value) {
+    window.__PERSONA_PREFILL_BUSY__ = true;
+    elEta.value = String(eta);
+    window.__PERSONA_PREFILL_BUSY__ = false;
+}
     }
 
     const professione = getVal("professione");
