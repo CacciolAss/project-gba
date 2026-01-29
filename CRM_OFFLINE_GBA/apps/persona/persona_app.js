@@ -775,10 +775,10 @@ try {
     // 2) altrimenti uso appStatePersona.anagrafica se già valorizzato
     // 3) altrimenti provo a derivarlo dal logico "appStatePersona.user.anagrafica"
     const anaSafe =
-        (typeof ana !== "undefined" && ana) ||
-        (appStatePersona && appStatePersona.anagrafica) ||
-        (appStatePersona && appStatePersona.user && appStatePersona.user.anagrafica) ||
-        {};
+    (typeof ana !== "undefined" && ana) ||
+    (appStatePersona && appStatePersona.user && appStatePersona.user.anagrafica) ||
+    (appStatePersona && appStatePersona.anagrafica) ||
+    {};
 
     appStatePersona.user = appStatePersona.user || {};
     appStatePersona.user.anagrafica = anaSafe;
