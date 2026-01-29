@@ -688,25 +688,26 @@ let luogoNascita = pickVal(["luogoNascita", "comuneNascita", "cittaNascita"]);
 
 
     // Prefill da CF (solo se il campo dataNascita è vuoto e CF sembra valido)
-    if (!dataNascita && codiceFiscale && codiceFiscale.length === 16) {
-        try {
-            const cfInfo = estraiDataNascitaDaCF(codiceFiscale);
-            if (cfInfo && cfInfo.data) {
-                dataNascita = cfInfo.data; // YYYY-MM-DD
-                const elData = document.getElementById("dataNascita");
-                if (elData) {
-    window.__PERSONA_PREFILL_BUSY__ = true;
-    elData.value = dataNascita;
-    window.__PERSONA_PREFILL_BUSY__ = false;
-}
-        } catch (e) {
-            console.warn("⚠️ Prefill dataNascita da CF fallito:", e);
+if (!dataNascita && codiceFiscale && codiceFiscale.length === 16) {
+    // 1) Prefill data di nascita
+    try {
+        const cfInfo = estraiDataNascitaDaCF(codiceFiscale);
+        if (cfInfo && cfInfo.data) {
+            dataNascita = cfInfo.data; // YYYY-MM-DD
+            const elData = document.getElementById("dataNascita");
+            if (elData && !elData.value) {
+                window.__PERSONA_PREFILL_BUSY__ = true;
+                elData.value = dataNascita;
+                window.__PERSONA_PREFILL_BUSY__ = false;
+            }
         }
-    // ✅ Auto-compilazione luogo di nascita da CF (solo se vuoto)
+    } catch (e) {
+        console.warn("⚠️ Prefill dataNascita da CF fallito:", e);
+    }
+
+    // 2) Prefill luogo di nascita (solo se vuoto)
     try {
         if (
-            codiceFiscale &&
-            codiceFiscale.length === 16 &&
             !luogoNascita &&
             typeof window.trovaComuneDaCodiceCatastale === "function"
         ) {
@@ -718,16 +719,17 @@ let luogoNascita = pickVal(["luogoNascita", "comuneNascita", "cittaNascita"]);
                 luogoNascita = comune.n;
                 const elLN = document.getElementById("luogoNascita");
                 if (elLN && !elLN.value) {
-    window.__PERSONA_PREFILL_BUSY__ = true;
-    elLN.value = comune.n;
-    window.__PERSONA_PREFILL_BUSY__ = false;
-}
+                    window.__PERSONA_PREFILL_BUSY__ = true;
+                    elLN.value = comune.n;
+                    window.__PERSONA_PREFILL_BUSY__ = false;
+                }
             }
         }
     } catch (e) {
         console.warn("⚠️ Prefill luogoNascita da CF fallito:", e);
     }
-    }
+}
+
        
     let eta = null;
     if (dataNascita) {
