@@ -3444,8 +3444,31 @@ appStatePersona.dynamic.indiceCorrente = idx;
         console.warn("Errore nel debug domande visibili persona:", err);
     }
 
-    // 6) Ritorno solo le domande effettivamente attive
-    return domandeFinali;
+    // 6) Cache: se profilo/segmenti non cambiano, riusa domandeFinali (evita loop / reset UI)
+try {
+    if (!appStatePersona.dynamic) appStatePersona.dynamic = {};
+
+    const prof = appStatePersona.dynamic.profiloScelto ? String(appStatePersona.dynamic.profiloScelto) : "";
+    const seg = Array.isArray(appStatePersona.dynamic.segmentiAttivi)
+        ? appStatePersona.dynamic.segmentiAttivi.join("|")
+        : "";
+
+    const sig = prof + "::" + seg;
+
+    // Se già calcolate per la stessa signature → ritorno cache (no ricalcolo/spam)
+    if (appStatePersona.dynamic.__domandeSig === sig && Array.isArray(appStatePersona.dynamic.__domandeCache)) {
+        return appStatePersona.dynamic.__domandeCache;
+    }
+
+    // Aggiorno cache
+    appStatePersona.dynamic.__domandeSig = sig;
+    appStatePersona.dynamic.__domandeCache = domandeFinali;
+} catch (e) {
+    // fail-safe: se qualcosa va storto, torno comunque domandeFinali
+}
+
+// 6b) Ritorno solo le domande effettivamente attive
+return domandeFinali;
 }
 
 /**
