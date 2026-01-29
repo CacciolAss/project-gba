@@ -2988,11 +2988,10 @@ function calcolaPrioritaProdottiPersona(risultati) {
             if (p.key === "tcm") {
 
     // Caso 1: tema TCM rilevante ma adeguatezza NON valutabile
-    if (protezioneCritica && (Number(appStatePersona?.user?.anagrafica?.redditoAnnuo || 0) <= 0)) {
-        return "TCM: tema prioritario da trattare. Adeguatezza NON valutabile in assenza di reddito. Raccogli il dato per una valutazione difendibile.";
+    if (p.key === "tcm") {
+    if (protezioneCritica) {
+        return "Gap di protezione rilevante: TCM da mettere al centro della conversazione prima di tutto il resto.";
     }
-
-    // Caso 2: adeguatezza valutabile e gap elevato
     if (gapMorteRatio > 0.4) {
         return "Scopertura in caso morte significativa rispetto al target: valutare rapidamente copertura TCM.";
     }
