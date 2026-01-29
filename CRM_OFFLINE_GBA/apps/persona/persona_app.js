@@ -4476,6 +4476,7 @@ if (!nome || !cognome || (!cf && !dataNascita)) {
 }
 
 const hasMinAnag = !!nome && !!cognome && (!!cf || !!dataNascita);
+     console.log("➡️ NEXT checkpoint", { idx, len: domande.length, domandaId: domanda?.id, hasMinAnag, nome, cognome, cf, dataNascita });
 if (!hasMinAnag) {
   mostraToast(
     "Compila anagrafica minima: Nome, Cognome e (Codice Fiscale oppure Data di nascita).",
@@ -4484,7 +4485,7 @@ if (!hasMinAnag) {
   return;
 }
 
-
+console.log("➡️ NEXT branch", idx < domande.length - 1 ? "advance" : "finish", { idx, len: domande.length });
     if (idx < domande.length - 1) {
       idx++;
       appStatePersona.dynamic.indiceCorrente = idx;
