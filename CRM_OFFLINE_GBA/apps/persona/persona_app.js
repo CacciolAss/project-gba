@@ -849,7 +849,6 @@ if (typeof salvaBozzaAnalisiPersona === "function") {
         }
     }, 500);
 }
-}
 
 
 /* =========================
