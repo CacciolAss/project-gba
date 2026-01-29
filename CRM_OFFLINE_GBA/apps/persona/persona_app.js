@@ -2984,36 +2984,28 @@ function calcolaPrioritaProdottiPersona(risultati) {
         else if (score >= 65) livello = "alto";
         else if (score >= 50) livello = "medio";
 
-        const notaConsulente = (() => {
-    if (p.key === "tcm") {
-        if (protezioneCritica) {
-            return "Gap di protezione rilevante: TCM da mettere al centro della conversazione prima di tutto il resto.";
-        }
-        if (gapMorteRatio > 0.4) {
-            return "Scopertura in caso morte significativa rispetto al target: valutare rapidamente copertura TCM.";
-        }
-    }
+        let notaConsulente = "";
 
-    if (p.key === "previdenza") {
-        if (previdenzaCritica) {
-            return "Gap pensionistico rilevante rispetto a età e aspettative: portare il tema previdenza entro il primo ciclo di appuntamenti.";
-        }
-        if (gapPensioneRatio > 0.3 && eta != null && eta >= 50) {
-            return "Età avanzata e gap pensione non trascurabile: calendarizzare un focus dedicato sulla previdenza.";
-        }
+if (p.key === "tcm") {
+    if (protezioneCritica) {
+        notaConsulente = "Gap di protezione rilevante: TCM da mettere al centro della conversazione prima di tutto il resto.";
+    } else if (gapMorteRatio > 0.4) {
+        notaConsulente = "Scopertura in caso morte significativa rispetto al target: valutare rapidamente copertura TCM.";
     }
-
-    if (p.key === "investimenti") {
-        if (protezioneCritica || previdenzaCritica) {
-            return "Investimenti da trattare solo dopo aver messo in sicurezza protezione e previdenza.";
-        }
-        if (scoreCoerenza != null && scoreCoerenza < 60) {
-            return "Prima di strutturare investimenti complessi, lavorare su coerenza decisionale e allineamento aspettative/rischio.";
-        }
+} else if (p.key === "previdenza") {
+    if (previdenzaCritica) {
+        notaConsulente = "Gap pensionistico rilevante rispetto a età e aspettative: portare il tema previdenza entro il primo ciclo di appuntamenti.";
+    } else if (gapPensioneRatio > 0.3 && eta != null && eta >= 50) {
+        notaConsulente = "Età avanzata e gap pensione non trascurabile: calendarizzare un focus dedicato sulla previdenza.";
     }
+} else if (p.key === "investimenti") {
+    if (protezioneCritica || previdenzaCritica) {
+        notaConsulente = "Investimenti da trattare solo dopo aver messo in sicurezza protezione e previdenza.";
+    } else if (scoreCoerenza != null && scoreCoerenza < 60) {
+        notaConsulente = "Prima di strutturare investimenti complessi, lavorare su coerenza decisionale e allineamento aspettative/rischio.";
+    }
+}
 
-    return "";
-})();
 
 
         return {
