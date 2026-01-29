@@ -642,8 +642,8 @@ function risolviLuogoNascitaDaCodiceLuogo(codiceLuogo) {
 ========================= */
 
 function leggiAnagraficaPersona() {
-   // Guard anti-loop: evita ricorsioni quando il codice fa prefill sui campi
-if (window.__PERSONA_PREFILL_BUSY__) return;
+    // Guard anti-loop: evita ricorsioni quando il codice fa prefill sui campi
+    if (window.__PERSONA_PREFILL_BUSY__) return;
 
     const getVal = (id) => {
         const el = document.getElementById(id);
@@ -656,90 +656,107 @@ if (window.__PERSONA_PREFILL_BUSY__) return;
         return num != null ? num : null;
     };
 
-// ✅ LETTURA ROBUSTA (ID variabili in pagina)
-const pickVal = (ids) => {
-  const list = Array.isArray(ids) ? ids : [ids];
-  for (const id of list) {
-    const el = document.getElementById(id);
-    if (el && typeof el.value === "string") {
-      const v = el.value.trim();
-      if (v) return v;
-    }
-  }
-  // fallback: prova anche name=...
-  for (const id of list) {
-    const el = document.querySelector(`[name="${id}"]`);
-    if (el && typeof el.value === "string") {
-      const v = el.value.trim();
-      if (v) return v;
-    }
-  }
-  return "";
-};
+    // ✅ LETTURA ROBUSTA (ID variabili in pagina)
+    const pickVal = (ids) => {
+        const list = Array.isArray(ids) ? ids : [ids];
+        for (const id of list) {
+            const el = document.getElementById(id);
+            if (el && typeof el.value === "string") {
+                const v = el.value.trim();
+                if (v) return v;
+            }
+        }
+        // fallback: prova anche name=...
+        for (const id of list) {
+            const el = document.querySelector(`[name="${id}"]`);
+            if (el && typeof el.value === "string") {
+                const v = el.value.trim();
+                if (v) return v;
+            }
+        }
+        return "";
+    };
 
-const nome = pickVal(["nome", "nomeCliente", "nomePersona", "anagraficaNome"]);
-const cognome = pickVal(["cognome", "cognomeCliente", "cognomePersona", "anagraficaCognome"]);
+    const nome = pickVal(["nome", "nomeCliente", "nomePersona", "anagraficaNome"]);
+    const cognome = pickVal([
+        "cognome",
+        "cognomeCliente",
+        "cognomePersona",
+        "anagraficaCognome"
+    ]);
 
-const codiceFiscaleRaw = pickVal(["codiceFiscale", "cf", "codFiscale", "codice_fiscale"]);
-const codiceFiscale = (codiceFiscaleRaw || "").toUpperCase();
+    const codiceFiscaleRaw = pickVal([
+        "codiceFiscale",
+        "cf",
+        "codFiscale",
+        "codice_fiscale"
+    ]);
+    const codiceFiscale = (codiceFiscaleRaw || "").toUpperCase();
 
-let dataNascita = pickVal(["dataNascita", "data_nascita", "birthDate"]);
-let luogoNascita = pickVal(["luogoNascita", "comuneNascita", "cittaNascita"]);
-
+    let dataNascita = pickVal(["dataNascita", "data_nascita", "birthDate"]);
+    let luogoNascita = pickVal(["luogoNascita", "comuneNascita", "cittaNascita"]);
 
     // Prefill da CF (solo se il campo dataNascita è vuoto e CF sembra valido)
-if (!dataNascita && codiceFiscale && codiceFiscale.length === 16) {
-    // 1) Prefill data di nascita
-    try {
-        const cfInfo = estraiDataNascitaDaCF(codiceFiscale);
-        if (cfInfo && cfInfo.data) {
-            dataNascita = cfInfo.data; // YYYY-MM-DD
-            const elData = document.getElementById("dataNascita");
-            if (elData && !elData.value) {
-                window.__PERSONA_PREFILL_BUSY__ = true;
-                elData.value = dataNascita;
-                window.__PERSONA_PREFILL_BUSY__ = false;
-            }
-        }
-    } catch (e) {
-        console.warn("⚠️ Prefill dataNascita da CF fallito:", e);
-    }
-
-    // 2) Prefill luogo di nascita (solo se vuoto)
-    try {
-        if (
-            !luogoNascita &&
-            typeof window.trovaComuneDaCodiceCatastale === "function"
-        ) {
-            // Codice catastale: caratteri 12-15 del CF (index 11..14)
-            const codCat = codiceFiscale.substring(11, 15).toUpperCase();
-            const comune = window.trovaComuneDaCodiceCatastale(codCat);
-
-            if (comune && comune.n) {
-                luogoNascita = comune.n;
-                const elLN = document.getElementById("luogoNascita");
-                if (elLN && !elLN.value) {
+    if (!dataNascita && codiceFiscale && codiceFiscale.length === 16) {
+        // 1) Prefill data di nascita
+        try {
+            const cfInfo = estraiDataNascitaDaCF(codiceFiscale);
+            if (cfInfo && cfInfo.data) {
+                dataNascita = cfInfo.data; // YYYY-MM-DD
+                const elData = document.getElementById("dataNascita");
+                if (elData && !elData.value) {
                     window.__PERSONA_PREFILL_BUSY__ = true;
-                    elLN.value = comune.n;
-                    window.__PERSONA_PREFILL_BUSY__ = false;
+                    try {
+                        elData.value = dataNascita;
+                    } finally {
+                        window.__PERSONA_PREFILL_BUSY__ = false;
+                    }
                 }
             }
+        } catch (e) {
+            console.warn("⚠️ Prefill dataNascita da CF fallito:", e);
         }
-    } catch (e) {
-        console.warn("⚠️ Prefill luogoNascita da CF fallito:", e);
-    }
-}
 
-       
+        // 2) Prefill luogo di nascita (solo se vuoto)
+        try {
+            if (
+                !luogoNascita &&
+                typeof window.trovaComuneDaCodiceCatastale === "function"
+            ) {
+                // Codice catastale: caratteri 12-15 del CF (index 11..14)
+                const codCat = codiceFiscale.substring(11, 15).toUpperCase();
+                const comune = window.trovaComuneDaCodiceCatastale(codCat);
+
+                if (comune && comune.n) {
+                    luogoNascita = comune.n;
+                    const elLN = document.getElementById("luogoNascita");
+                    if (elLN && !elLN.value) {
+                        window.__PERSONA_PREFILL_BUSY__ = true;
+                        try {
+                            elLN.value = comune.n;
+                        } finally {
+                            window.__PERSONA_PREFILL_BUSY__ = false;
+                        }
+                    }
+                }
+            }
+        } catch (e) {
+            console.warn("⚠️ Prefill luogoNascita da CF fallito:", e);
+        }
+    }
+
     let eta = null;
     if (dataNascita) {
         eta = calcolaEtaDaData(dataNascita);
         const elEta = document.getElementById("eta");
         if (elEta && !elEta.value) {
-    window.__PERSONA_PREFILL_BUSY__ = true;
-    elEta.value = String(eta);
-    window.__PERSONA_PREFILL_BUSY__ = false;
-}
+            window.__PERSONA_PREFILL_BUSY__ = true;
+            try {
+                elEta.value = String(eta);
+            } finally {
+                window.__PERSONA_PREFILL_BUSY__ = false;
+            }
+        }
     }
 
     const professione = getVal("professione");
@@ -759,7 +776,9 @@ if (!dataNascita && codiceFiscale && codiceFiscale.length === 16) {
     const selectConsulente = document.getElementById("consulenteSelect");
     const emailConsulenteInput = document.getElementById("emailConsulente");
     const consulenteEmail = selectConsulente ? selectConsulente.value : "";
-    const consulenteEmailVisibile = emailConsulenteInput ? emailConsulenteInput.value : "";
+    const consulenteEmailVisibile = emailConsulenteInput
+        ? emailConsulenteInput.value
+        : "";
 
     appStatePersona.user.anagrafica = {
         nome,
@@ -784,6 +803,8 @@ if (!dataNascita && codiceFiscale && codiceFiscale.length === 16) {
         consulenteEmail,
         consulenteEmailVisibile
     };
+}
+
 
     // Aggiorna il contesto dinamico persona se è disponibile il costruttore
     if (typeof window.buildContestoPersonaFromAnagrafica === "function") {
