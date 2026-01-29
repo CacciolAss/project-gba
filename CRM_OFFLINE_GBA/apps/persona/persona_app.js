@@ -4394,7 +4394,8 @@ function vaiDomandaSuccessivaPersona() {
     const risposta = appStatePersona.questionnaire.answers[domanda.id];
     if (risposta == null) {
       mostraToast("Rispondi alla domanda prima di proseguire.", "warning");
-      return;
+window.__PERSONA_NEXT_LOCK__ = false; // fail-safe: non restare bloccato dopo toast
+return;
     }
 
     // ✅ GATE ANAGRAFICA MINIMA (anti-analisi vuote)
