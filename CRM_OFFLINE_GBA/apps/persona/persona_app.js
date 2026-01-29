@@ -3806,7 +3806,12 @@ function renderDomandaCorrentePersona() {
         return;
     }
 
-    const domande = getDomandePersona();
+    // ✅ Single source of truth per la UI: usa SEMPRE la lista fissata in dynamic
+const domande =
+  (appStatePersona.dynamic && Array.isArray(appStatePersona.dynamic.domandeVisibili) && appStatePersona.dynamic.domandeVisibili.length)
+    ? appStatePersona.dynamic.domandeVisibili
+    : getDomandePersona();
+
     if (!Array.isArray(domande) || !domande.length) {
         container.innerHTML = `
             <p style="font-size:13px; color:#9ca3af;">
@@ -4442,12 +4447,7 @@ function vaiDomandaSuccessivaPersona() {
       leggiAnagraficaPersona();
     }
 
-    const domande = getDomandePersona();
-    if (!domande.length) {
-      console.warn("⛔ Nessuna domanda disponibile.");
-      return;
-    }
-
+    // ✅ Assicura dynamic PRIMA di calcolare domande (getDomandePersona usa/cacha su dynamic)
     if (!appStatePersona.dynamic) {
       appStatePersona.dynamic = {
         contestoPersona: null,
@@ -4455,6 +4455,44 @@ function vaiDomandaSuccessivaPersona() {
         indiceCorrente: 0
       };
     }
+
+    // ✅ Calcolo domande e fissaggio "single source of truth" per la UI sessione
+    const newDomande = getDomandePersona();
+    if (!newDomande.length) {
+      console.warn("⛔ Nessuna domanda disponibile.");
+      return;
+    }
+
+    // signature domande (profilo/segmenti) già gestita da getDomandePersona tramite __domandeSig
+    const newSig = (appStatePersona.dynamic && appStatePersona.dynamic.__domandeSig)
+      ? String(appStatePersona.dynamic.__domandeSig)
+      : String(newDomande.length);
+
+    const prevSig = appStatePersona.dynamic.__uiDomandeSig
+      ? String(appStatePersona.dynamic.__uiDomandeSig)
+      : "";
+
+    // Se profilo/domande cambiano mentre sto compilando → riallineo UI e riparto senza validare "domanda sbagliata"
+    if (prevSig && prevSig !== newSig) {
+      appStatePersona.dynamic.__uiDomandeSig = newSig;
+      appStatePersona.dynamic.domandeVisibili = newDomande;
+      appStatePersona.dynamic.indiceCorrente = 0;
+      appStatePersona.questionnaire.currentIndex = 0;
+
+      // opzionale: mantiene coerente anche un eventuale contatore UI
+      window.__PERSONA_DOMANDE_TOT__ = newDomande.length;
+
+      renderDomandaCorrentePersona();
+      return;
+    }
+
+    // Prima volta o stessa signature → aggiorno cache UI
+    appStatePersona.dynamic.__uiDomandeSig = newSig;
+    appStatePersona.dynamic.domandeVisibili = newDomande;
+    window.__PERSONA_DOMANDE_TOT__ = newDomande.length;
+
+    const domande = appStatePersona.dynamic.domandeVisibili;
+
 
     let idx = 0;
     if (typeof appStatePersona.dynamic.indiceCorrente === "number") {
