@@ -2988,7 +2988,7 @@ function calcolaPrioritaProdottiPersona(risultati) {
             if (p.key === "tcm") {
 
     // Caso 1: tema TCM rilevante ma adeguatezza NON valutabile
-    if (protezioneCritica && (!redditoAnnuo || redditoAnnuo <= 0)) {
+    if (protezioneCritica && (Number(appStatePersona?.user?.anagrafica?.redditoAnnuo || 0) <= 0)) {
         return "TCM: tema prioritario da trattare. Adeguatezza NON valutabile in assenza di reddito. Raccogli il dato per una valutazione difendibile.";
     }
 
