@@ -784,22 +784,17 @@ let luogoNascita = pickVal(["luogoNascita", "comuneNascita", "cittaNascita"]);
             console.warn("Errore nella costruzione del contesto persona:", err);
         }
     }
-// ✅ Allinea lo state: anagrafica sempre disponibile sia in user.anagrafica (V2) sia in appStatePersona.anagrafica (legacy)
+// ✅ Allinea lo state: NON sovrascrivere mai la V2 appena letta con legacy vuota
 try {
-    // Prendo l'oggetto anagrafica appena letto, qualunque sia il nome variabile:
-    // 1) se esiste "ana" uso quello
-    // 2) altrimenti uso appStatePersona.anagrafica se già valorizzato
-    // 3) altrimenti provo a derivarlo dal logico "appStatePersona.user.anagrafica"
     const anaSafe =
-    (typeof ana !== "undefined" && ana) ||
-    (appStatePersona && appStatePersona.user && appStatePersona.user.anagrafica) ||
-    (appStatePersona && appStatePersona.anagrafica) ||
-    {};
+        (appStatePersona && appStatePersona.user && appStatePersona.user.anagrafica) || // ✅ PRIORITÀ ASSOLUTA
+        (typeof ana !== "undefined" && ana) ||
+        (appStatePersona && appStatePersona.anagrafica) ||
+        {};
 
     appStatePersona.user = appStatePersona.user || {};
     appStatePersona.user.anagrafica = anaSafe;
     appStatePersona.anagrafica = anaSafe; // compatibilità legacy
-    window.appStatePersona = appStatePersona; // anti-reset UI
 } catch (e) {
     console.warn("⚠️ Impossibile allineare appStatePersona.user.anagrafica:", e);
 }
