@@ -4425,17 +4425,14 @@ function vaiDomandaSuccessivaPersona() {
     mostraToast("Questionario completato. Calcolo analisi in corso.", "success");
     console.log("✅ Questionario persona completato:", appStatePersona.questionnaire.answers);
 
-    calcolaRisultatiPersona();
-    renderRisultatiPersona();
-    renderRadarPersona();
-    renderTimelinePersona();
+    // ✅ pipeline unica: calcolo + render + scroll dentro eseguiAnalisiPersona()
+    eseguiAnalisiPersona();
 
-    const risultatiSection = document.getElementById("risultatiPersonaSection");
-    if (risultatiSection) {
-      risultatiSection.scrollIntoView({ behavior: "smooth", block: "start" });
+    // ✅ salvataggio SOLO una volta, a fine questionario
+    if (typeof salvaAnalisiPersonaInArchivio === "function") {
+      salvaAnalisiPersonaInArchivio();
     }
 
-if (typeof salvaAnalisiPersonaInArchivio === "function") salvaAnalisiPersonaInArchivio();
 
   } finally {
     // ✅ sblocco SEMPRE, anche su return/errore
