@@ -4435,18 +4435,8 @@ function vaiDomandaSuccessivaPersona() {
       risultatiSection.scrollIntoView({ behavior: "smooth", block: "start" });
     }
 
-    if (
-      typeof creaRecordAnalisiPersona === "function" &&
-      typeof aggiungiAnalisiPersonaInArchivio === "function" &&
-      typeof renderArchivioPersona === "function"
-    ) {
-      const record = creaRecordAnalisiPersona();
-      aggiungiAnalisiPersonaInArchivio(record);
-      renderArchivioPersona();
-      console.log("💾 Analisi persona salvata in archivio.");
-    } else {
-      console.warn("Funzioni archivio persona non disponibili.");
-    }
+if (typeof salvaAnalisiPersonaInArchivio === "function") salvaAnalisiPersonaInArchivio();
+
   } finally {
     // ✅ sblocco SEMPRE, anche su return/errore
     window.__PERSONA_NEXT_LOCK__ = false;
