@@ -4534,6 +4534,79 @@ function eseguiAnalisiPersona() {
 }
 
 /* ======================================================
+   CREAZIONE RECORD ANALISI PERSONA (MINIMO) — FIX ARCHIVIO
+   Obiettivo: allineare archivio a draft (incluso copertureAttive)
+====================================================== */
+function creaRecordAnalisiPersona() {
+  try {
+    const ts = new Date().toISOString();
+
+    // anagrafica: prova più possibili fonti senza rompere nulla
+    const cliente =
+      (appStatePersona && appStatePersona.cliente) ||
+      (appStatePersona && appStatePersona.anagrafica) ||
+      (appStatePersona && appStatePersona.user && appStatePersona.user.anagrafica) ||
+      {};
+
+    const cf = (cliente.codiceFiscale || "NC").toString().trim() || "NC";
+    const id = cf + "_" + ts;
+
+    // risultati: se esistono nello stato li includo
+    const risultati =
+      (appStatePersona && appStatePersona.risultati) ||
+      (window && window.__RISULTATI_PERSONA__) ||
+      null;
+
+    // snapshot v2: se hai già il builder altrove lo prende, altrimenti fallback
+    const v2Snapshot =
+      (appStatePersona && appStatePersona.v2Snapshot) ||
+      (appStatePersona && appStatePersona.dynamic && appStatePersona.dynamic.v2Snapshot) ||
+      null;
+
+    // questionario
+    const risposte =
+      (appStatePersona && appStatePersona.questionnaire && appStatePersona.questionnaire.answers) ||
+      {};
+
+    // caring (se lo hai già letto in appStatePersona)
+    const caring =
+      (appStatePersona && appStatePersona.caring) ||
+      { dataAppuntamento: null, oraAppuntamento: null, modalita: null, valutazione: null, note: null };
+
+    // coperture attive: qui è il punto critico (TCM capitaleEuro ecc.)
+    const copertureAttive =
+      (appStatePersona && appStatePersona.copertureAttive) ||
+      (appStatePersona && appStatePersona.user && appStatePersona.user.copertureAttive) ||
+      null;
+
+    // consulente (se presente)
+    const consulente =
+      (appStatePersona && appStatePersona.consulente) ||
+      { email: null, emailVisibile: null };
+
+    // polizze (se presenti)
+    const polizze = (appStatePersona && appStatePersona.polizze) || [];
+
+    return {
+      schemaVersion: 1,
+      v2Snapshot: v2Snapshot || undefined,
+      id,
+      timestamp: ts,
+      cliente,
+      consulente,
+      polizze,
+      copertureAttive: copertureAttive || undefined,
+      risultati: risultati || undefined,
+      caring,
+      risposte
+    };
+  } catch (e) {
+    console.error("❌ creaRecordAnalisiPersona() errore:", e);
+    return null;
+  }
+}
+
+/* ======================================================
    SALVATAGGIO ANALISI PERSONA NELL'ARCHIVIO (NUOVO)
 ====================================================== */
 function salvaAnalisiPersonaInArchivio() {
