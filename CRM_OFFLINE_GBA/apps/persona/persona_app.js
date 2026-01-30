@@ -4501,9 +4501,7 @@ function eseguiAnalisiPersona() {
         }
 
         // 5. salva in archivio
-        if (typeof salvaAnalisiPersonaInArchivio === "function") {
-            salvaAnalisiPersonaInArchivio();
-        }
+// AUTO-SAVE: disabilitato qui. Il salvataggio avviene SOLO a fine questionario (Ultima domanda).
 
 
         // 6. scroll ai risultati
