@@ -5,7 +5,7 @@ const PASSWORD = "R2VuZXJhbGkyMDI2IQ=="; //
 function verificaPassword(inputPass) {
     try {
         // Decodifica e confronta
-        return inputPass === atob(PASSWORD_CODIFICATA);
+        return inputPass === atob(PASSWORD);
     } catch(e) {
         return false;
     }
