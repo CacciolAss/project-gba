@@ -1,4 +1,14 @@
 console.log("persona_app.js caricato correttamente");
+// Funzione protezione testi (anti-hacker)
+function proteggiTesto(testo) {
+    if (typeof testo !== 'string') return '';
+    return testo
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
 // 🔴 PASSWORD CODIFICATA
 const PASSWORD CODIFICATA = "R2VuZXJhbGkyMDI2IQ=="; // 
 
@@ -1164,7 +1174,7 @@ const labelCapitale = isInfortuni ? "Capitale IP (€)" : "Capitale assicurato (
         html += `
             <div class="copertura-v2-card">
     <div class="copertura-v2-head">
-        <div class="copertura-v2-title">${item.label}</div>
+        <div class="copertura-v2-title">${proteggiTesto(item.label)}</div>
 
         <input type="checkbox"
                data-copertura-key="${item.key}"
