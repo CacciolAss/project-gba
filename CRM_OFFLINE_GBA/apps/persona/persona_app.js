@@ -1,4 +1,6 @@
 console.log("persona_app.js caricato correttamente");
+// 🔴 PASSWORD DELL'APP - Cambia solo il testo tra virgolette qui sotto
+const PASSWORD_ACCESSO = "Generali2026!";
 
 /* =========================
    STATE APP PERSONA
@@ -440,7 +442,7 @@ function eseguiLoginPersona() {
         return;
     }
 
-    if (pass !== "Generali2026!") {
+    if (pass !== PASSWORD_ACCESSO) {
         mostraToast("Password non corretta.", "error");
         return;
     }
