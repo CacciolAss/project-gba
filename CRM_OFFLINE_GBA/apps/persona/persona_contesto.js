@@ -93,21 +93,6 @@
             stato = "coppia_senza_figli";
         }
 
-        // Euristica "bamboccione":
-        // - vive in un nucleo > 1
-        // - nessun figlio a carico
-        // - età adulta ma non avanzata
-        if (
-            nucleo != null &&
-            nucleo > 1 &&
-            figli === 0 &&
-            eta != null &&
-            eta >= 25 &&
-            eta <= 40
-        ) {
-            stato = "bamboccione";
-        }
-
         return stato;
     }
 
@@ -354,3 +339,4 @@
     }
 
 })();
+
