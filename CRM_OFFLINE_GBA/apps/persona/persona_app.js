@@ -1,11 +1,11 @@
 console.log("persona_app.js caricato correttamente");
 // 🔴 PASSWORD CODIFICATA
-const PASSWORD = "R2VuZXJhbGkyMDI2IQ=="; // 
+const PASSWORD CODIFICATA = "R2VuZXJhbGkyMDI2IQ=="; // 
 
 function verificaPassword(inputPass) {
     try {
         // Decodifica e confronta
-        return inputPass === atob(PASSWORD);
+        return inputPass === atob(PASSWORD_CODIFICATA);
     } catch(e) {
         return false;
     }
