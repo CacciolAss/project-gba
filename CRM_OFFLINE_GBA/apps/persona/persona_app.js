@@ -4353,18 +4353,23 @@ function selezionaRispostaPersona(questionId, value) {
         }
     }
 
-    // Salvataggio standard della risposta
-    appStatePersona.questionnaire.answers[questionId] = value;
+// Salvataggio standard della risposta
+appStatePersona.questionnaire.answers[questionId] = value;
 
-    // Se è la domanda A1 (reddito), mettila anche nel contenitore Aladdin
+// Se è la domanda A1 (reddito), mettila anche nel contenitore Aladdin
 if (questionId === "A1" && typeof Aladdin !== "undefined") {
     Aladdin.salvaReddito(appStatePersona, value);
 }
 
-    // Autosave bozza analisi persona
-    if (typeof salvaBozzaAnalisiPersona === "function") {
-        salvaBozzaAnalisiPersona();
-    }
+// Se è la domanda A2 (stato familiare), mettila anche nel contenitore Aladdin
+if (questionId === "A2" && typeof Aladdin !== "undefined") {
+    Aladdin.salvaStatoFamiliare(appStatePersona, value);
+}
+
+// Autosave bozza analisi persona
+if (typeof salvaBozzaAnalisiPersona === "function") {
+    salvaBozzaAnalisiPersona();
+}
 
     renderDomandaCorrentePersona();
 }
