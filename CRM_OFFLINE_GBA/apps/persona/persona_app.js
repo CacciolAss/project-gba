@@ -10,7 +10,7 @@ function proteggiTesto(testo) {
         .replace(/'/g, "&#039;");
 }
 // 🔴 PASSWORD CODIFICATA
-const PASSWORD CODIFICATA = "R2VuZXJhbGkyMDI2IQ=="; // 
+const PASSWORD_CODIFICATA = "R2VuZXJhbGkyMDI2IQ=="; // 
 
 function verificaPassword(inputPass) {
     try {
