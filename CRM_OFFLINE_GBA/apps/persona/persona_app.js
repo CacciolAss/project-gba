@@ -1,6 +1,15 @@
 console.log("persona_app.js caricato correttamente");
-// 🔴 PASSWORD DELL'APP - Cambia solo il testo tra virgolette qui sotto
-const PASSWORD_ACCESSO = "Generali2026!";
+// 🔴 PASSWORD CODIFICATA
+const PASSWORD_CODIFICATA = "R2VuZXJhbGkyMDI2IQ=="; // 
+
+function verificaPassword(inputPass) {
+    try {
+        // Decodifica e confronta
+        return inputPass === atob(PASSWORD_CODIFICATA);
+    } catch(e) {
+        return false;
+    }
+}
 
 /* =========================
    STATE APP PERSONA
@@ -442,7 +451,7 @@ function eseguiLoginPersona() {
         return;
     }
 
-    if (pass !== PASSWORD_ACCESSO) {
+    if (!verificaPassword(pass)) {
         mostraToast("Password non corretta.", "error");
         return;
     }
