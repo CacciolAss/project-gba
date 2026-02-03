@@ -274,7 +274,6 @@ function caricaBozzaAnalisiPersonaSeEsiste() {
         }
 
         if (draft.questionnaire && typeof draft.questionnaire === "object") {
-                if (draft.questionnaire && typeof draft.questionnaire === "object") {
             appStatePersona.questionnaire.answers = draft.questionnaire.answers || {};
             appStatePersona.questionnaire.currentIndex =
                 typeof draft.questionnaire.currentIndex === "number"
