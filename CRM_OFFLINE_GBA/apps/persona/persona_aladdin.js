@@ -52,7 +52,7 @@ const Aladdin = {
       const famiglia = fatti.statoFamiliare.valore;
       
       // Se reddito è alto (4-5) e ha figli → protezione massima
-      if (reddito >= 4 && famiglia === "con_figli") {
+      if (reddito >= 4 && famiglia == 2) {
         connessioni.push({
           tipo: "protezione_critica",
           descrizione: "Famiglia con reddito elevato da proteggere",
@@ -60,7 +60,7 @@ const Aladdin = {
         });
       }
       // Se reddito è medio (2-3) e ha figli → protezione standard
-      else if (reddito >= 2 && famiglia === "con_figli") {
+      else if (reddito >= 2 && famiglia == 2) {
         connessioni.push({
           tipo: "protezione_standard",
           descrizione: "Famiglia con reddito medio da proteggere",
