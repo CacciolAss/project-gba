@@ -632,9 +632,25 @@
                     <input type="number" id="nucleoComponenti" min="1" placeholder="Es: 4" />
                 </div>
 
-                <div>
+                                <div>
                     <label>Figli minorenni</label>
                     <input type="number" id="figliMinorenni" min="0" placeholder="Es: 2" />
+                </div>
+
+                <div>
+                    <label>Figli maggiorenni conviventi</label>
+                    <input type="number" id="figliMaggiorenniConviventi" min="0" placeholder="Es: 1" />
+                </div>
+
+                <div>
+                    <label>Stato civile</label>
+                    <select id="statoCivile">
+                        <option value="">Seleziona...</option>
+                        <option value="celibe">Celibe/Nubile</option>
+                        <option value="coniugato">Coniugato</option>
+                        <option value="divorziato">Divorziato</option>
+                        <option value="vedovo">Vedovo</option>
+                    </select>
                 </div>
 
                 <div>
@@ -919,7 +935,13 @@
                         </p>
                     </div>
 
-                    <h3 style="margin-top:18px;">Aree di rischio</h3>
+                                        <h3 style="margin-top:18px;">Aree di rischio</h3>
+                    
+                    <!-- Container Aladdin -->
+                    <div id="aladdinFilRougeContainer" style="margin-top:12px;"></div>
+                    <div id="aladdinTimelineContainer" style="margin-top:12px;"></div>
+                    <div id="aladdinAlertContainer" style="margin-top:12px;"></div>
+                    
                     <div class="area-score-row" id="areeRischioPersona">
                         <!-- Card di punteggio per area (Protezione, Previdenza, Investimento, Liquidità, ecc.) -->
                     </div>
@@ -1211,10 +1233,12 @@ req.onsuccess = () => {
 <!-- Governance centrale Persona -->
 <script src="persona_governance.js"></script>
 
+<!-- Script Aladdin (PRIMA di persona_app.js) -->
+<script src="persona_aladdin.js"></script>
+
 <!-- Script logica persona -->
 <script src="persona_app.js"></script>
-<script src="persona_governance_ui.js"></script>
-<script src="persona_aladdin.js"></script>                    
+<script src="persona_governance_ui.js"></script>                   
 
 <!-- Decision Graph (UI) -->
 <section id="decisionGraphSection" style="margin-top:16px;">
@@ -1230,6 +1254,7 @@ req.onsuccess = () => {
 
 </body>
 </html>
+
 
 
 
