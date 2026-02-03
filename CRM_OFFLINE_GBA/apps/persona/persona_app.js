@@ -6139,9 +6139,19 @@ function renderFilRouge() {
     let html = `<div style="margin-top:12px; padding:10px 12px; border-radius:10px; background:#fef2f2; border:1px solid #fecaca;">
         <div style="font-size:13px; font-weight:700; color:#b91c1c; margin-bottom:6px;">🧵 Fil Rouge - Inferenze Critiche</div>`;
     
-    if (inferenze && inferenze.length) {
+        if (inferenze && inferenze.length) {
         html += `<ul style="font-size:12px; color:#4b5563; margin:0 0 8px 16px; padding:0;">`;
-        inferenze.forEach(inf => html += `<li style="margin-bottom:4px;">${inf}</li>`);
+        inferenze.forEach(inf => {
+            const titolo = inf.tipo ? inf.tipo.replace(/_/g, ' ') : 'Inferenza';
+            const desc = inf.descrizione || '';
+            const impatto = inf.impatto ? `<div style="font-size:11px; color:#7c2d12; margin-top:2px; font-style:italic;">${inf.impatto}</div>` : '';
+            const badge = inf.priorita ? `<span style="font-size:10px; background:#fecaca; color:#991b1b; padding:1px 6px; border-radius:10px; margin-right:6px; font-weight:600;">${inf.priorita}</span>` : '';
+            html += `<li style="margin-bottom:8px; line-height:1.4;">
+                <div style="font-weight:600; color:#111827; margin-bottom:2px;">${badge}${titolo}</div>
+                <div>${desc}</div>
+                ${impatto}
+            </li>`;
+        });
         html += `</ul>`;
     }
     
