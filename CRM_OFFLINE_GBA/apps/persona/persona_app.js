@@ -6160,36 +6160,67 @@ function renderFilRouge() {
         <div style="font-size:13px; font-weight:700; color:#b91c1c; margin-bottom:6px;">🧵 Fil Rouge - Inferenze Critiche</div>`;
     
         if (inferenze && inferenze.length) {
-        html += `<ul style="font-size:12px; color:#4b5563; margin:0 0 8px 16px; padding:0;">`;
-        inferenze.forEach(inf => {
-            const titolo = inf.tipo ? inf.tipo.replace(/_/g, ' ') : 'Inferenza';
-            const desc = inf.descrizione || '';
-            const impatto = inf.impatto ? `<div style="font-size:11px; color:#7c2d12; margin-top:2px; font-style:italic;">${inf.impatto}</div>` : '';
-            const badge = inf.priorita ? `<span style="font-size:10px; background:#fecaca; color:#991b1b; padding:1px 6px; border-radius:10px; margin-right:6px; font-weight:600;">${inf.priorita}</span>` : '';
-            html += `<li style="margin-bottom:8px; line-height:1.4;">
-                <div style="font-weight:600; color:#111827; margin-bottom:2px;">${badge}${titolo}</div>
-                <div>${desc}</div>
-                ${impatto}
-            </li>`;
+    html += `<ul style="font-size:12px; color:#4b5563; margin:0 0 8px 16px; padding:0;">`;
+    inferenze.forEach(inf => {
+        const titolo = inf.tipo ? inf.tipo.replace(/_/g, ' ') : 'Inferenza';
+        const desc = inf.descrizione || '';
+        
+        // Formatta numeri nell'impatto (es. €150000 -> € 150.000)
+        let impattoTesto = inf.impatto || '';
+        impattoTesto = impattoTesto.replace(/€\s*(\d+)/g, (match, num) => {
+            const n = parseInt(num);
+            return !isNaN(n) ? `€ ${n.toLocaleString('it-IT')}` : match;
         });
-        html += `</ul>`;
-    }
+        const impatto = impattoTesto ? `<div style="font-size:11px; color:#7c2d12; margin-top:2px; font-style:italic;">${impattoTesto}</div>` : '';
+        
+        // Colori badge in base alla priorità
+        let badgeColor = '#f59e0b'; 
+        let badgeBg = '#fef3c7';
+        if (inf.priorita === 'ALTA' || inf.priorita === 'CRITICA') {
+            badgeColor = '#dc2626'; 
+            badgeBg = '#fee2e2';
+        } else if (inf.priorita === 'MEDIA') {
+            badgeColor = '#ea580c'; 
+            badgeBg = '#ffedd5';
+        }
+        
+        const badge = inf.priorita ? `<span style="font-size:10px; background:${badgeBg}; color:${badgeColor}; padding:2px 8px; border-radius:999px; margin-right:6px; font-weight:600; border:1px solid ${badgeColor};">${inf.priorita}</span>` : '';
+        
+        html += `<li style="margin-bottom:8px; line-height:1.4;">
+            <div style="font-weight:600; color:#111827; margin-bottom:2px;">${badge}${titolo}</div>
+            <div>${desc}</div>
+            ${impatto}
+        </li>`;
+    });
+    html += `</ul>`;
+}
     
     if (azioniConsigliate && azioniConsigliate.length) {
     html += `<div style="font-size:12px; font-weight:600; color:#111827; margin-top:8px;">Azioni consigliate:</div>
              <ul style="font-size:11px; color:#374151; margin:4px 0 0 16px; padding:0;">`;
     azioniConsigliate.forEach(az => {
-        // az è un oggetto con priorità, azione, target, motivazione, prodottoConsigliato
         const azioneText = az.azione || 'Azione';
-        const targetText = az.target || '';
+        
+        // Formatta euro nel target
+        let targetText = az.target || '';
+        targetText = targetText.replace(/€\s*(\d+)/g, (match, num) => {
+            const n = parseInt(num);
+            return !isNaN(n) ? `€ ${n.toLocaleString('it-IT')}` : match;
+        });
+        
         const motivazioneText = az.motivazione || '';
         const prodottoText = az.prodottoConsigliato || '';
         
-        html += `<li style="margin-bottom:6px; line-height:1.4;">
+        // Colore bordo in base alla priorità numerica
+        let prioColor = '#16a34a'; // verde (bassa)
+        if (az.priorità === 1) prioColor = '#dc2626'; // rosso (massima)
+        else if (az.priorità === 2) prioColor = '#ea580c'; // arancione
+        
+        html += `<li style="margin-bottom:6px; line-height:1.4; border-left:3px solid ${prioColor}; padding-left:8px;">
             <div style="font-weight:600;">${azioneText}</div>
-            ${targetText ? `<div>Target: ${targetText}</div>` : ''}
-            ${motivazioneText ? `<div style="font-style:italic; color:#6b7280;">${motivazioneText}</div>` : ''}
-            ${prodottoText ? `<div style="color:#b91c1c; font-weight:500;">→ ${prodottoText}</div>` : ''}
+            ${targetText ? `<div style="color:#059669; font-weight:500;">${targetText}</div>` : ''}
+            ${motivazioneText ? `<div style="font-style:italic; color:#6b7280; margin-top:2px;">${motivazioneText}</div>` : ''}
+            ${prodottoText ? `<div style="color:#b91c1c; font-weight:600; margin-top:2px; font-size:10px;">→ ${prodottoText}</div>` : ''}
         </li>`;
     });
     html += `</ul>`;
