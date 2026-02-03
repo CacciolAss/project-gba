@@ -55,14 +55,14 @@ const appStatePersona = {
         radar: null,
         timeline: null
     },
-    // Slice dedicato al motore dinamico V2
+        // Slice dedicato al motore dinamico V2
     dynamic: {
         contestoPersona: null,      // verrà valorizzato da buildContestoPersonaFromAnagrafica / getDomandePersona
         domandeVisibili: [],        // lista calcolata dal motore di visibilità
         indiceCorrente: 0           // puntatore nella lista domandeVisibili
-    }
+    },
+    aladdinReport: null             // Report AladdinCore (ClientTwin, FilRouge, Timeline, Alert)
 };
-
 
 
 /* =========================
@@ -169,10 +169,12 @@ function salvaBozzaAnalisiPersona() {
         })()
     },
 
-    questionnaire: {
+        questionnaire: {
         currentIndex: appStatePersona.questionnaire.currentIndex || 0,
         answers: { ...answers }
     },
+    
+    aladdinReport: appStatePersona.aladdinReport || null,
 
     caring: {
         dataAppuntamento: caring.dataAppuntamento || "",
@@ -272,11 +274,17 @@ function caricaBozzaAnalisiPersonaSeEsiste() {
         }
 
         if (draft.questionnaire && typeof draft.questionnaire === "object") {
+                if (draft.questionnaire && typeof draft.questionnaire === "object") {
             appStatePersona.questionnaire.answers = draft.questionnaire.answers || {};
             appStatePersona.questionnaire.currentIndex =
                 typeof draft.questionnaire.currentIndex === "number"
                     ? draft.questionnaire.currentIndex
                     : 0;
+        }
+        
+        // Ripristino Aladdin Report (bozza)
+        if (draft.aladdinReport) {
+            appStatePersona.aladdinReport = draft.aladdinReport;
         }
     
 // Ripristino Coperture Attive V2 (bozza)
@@ -744,13 +752,16 @@ const cognome = (cognomeEl && typeof cognomeEl.value === "string") ? cognomeEl.v
     const citta = getVal("citta");
     const provincia = getVal("provincia");
     const cap = getVal("cap");
+    // Nuovi campi Aladdin
+    const statoCivile = getVal("statoCivile");
+    const figliMaggiorenniConviventi = getNum("figliMaggiorenniConviventi");
 
     const selectConsulente = document.getElementById("consulenteSelect");
     const emailConsulenteInput = document.getElementById("emailConsulente");
     const consulenteEmail = selectConsulente ? selectConsulente.value : "";
     const consulenteEmailVisibile = emailConsulenteInput ? emailConsulenteInput.value : "";
 
-    appStatePersona.user.anagrafica = {
+        appStatePersona.user.anagrafica = {
         nome,
         cognome,
         codiceFiscale,
@@ -764,6 +775,8 @@ const cognome = (cognomeEl && typeof cognomeEl.value === "string") ? cognomeEl.v
         numPercettoriReddito,
         nucleoComponenti,
         figliMinorenni,
+        figliMaggiorenniConviventi,  // Nuovo campo Aladdin
+        statoCivile,                  // Nuovo campo Aladdin
         patrimonioFinanziario,
         emailCliente,
         telefonoCliente,
@@ -4514,8 +4527,11 @@ function eseguiAnalisiPersona() {
             validaCoerenzaAnagraficaPersona();
         }
 
-        // 3. calcolo risultati completi
+                // 3. calcolo risultati completi
         calcolaRisultatiPersona();
+        
+        // 3b. Esecuzione motore Aladdin (dopo calcolo risultati, prima del render)
+        eseguiAladdinAnalysis();
 
                 // 4. render UI step 3
         if (typeof renderRisultatiPersona === "function") renderRisultatiPersona();
@@ -4613,8 +4629,9 @@ function creaRecordAnalisiPersona() {
       polizze,
       copertureAttive: copertureAttive || undefined,
       risultati: risultati || undefined,
-      caring,
-      risposte
+            caring,
+      risposte,
+      aladdinReport: appStatePersona.aladdinReport || null
     };
   } catch (e) {
     console.error("❌ creaRecordAnalisiPersona() errore:", e);
@@ -5514,10 +5531,22 @@ function renderRisultatiPersona() {
                 : ""
         }
         ${gapBlockHtml}
-        ${renderCoerenzaAvanzataPersona(coerenzaAvanzata)}
+                ${renderCoerenzaAvanzataPersona(coerenzaAvanzata)}
         ${semaforo ? renderSemaforoPersona(semaforo) : ""}
         ${renderPrioritaProdottiPersona(prioritaProdotti)}
+        
+        <!-- Container Aladdin (iniettati dinamicamente se non presenti) -->
+        <div id="aladdinFilRougeContainer" style="margin-top:8px;"></div>
+        <div id="aladdinTimelineContainer" style="margin-top:8px;"></div>
+        <div id="aladdinAlertContainer" style="margin-top:8px;"></div>
     `;
+    
+    // Trigger render Aladdin se report già presente (es. da bozza)
+    if (appStatePersona.aladdinReport) {
+        renderFilRouge();
+        renderTimeline();
+        renderAlert();
+    }
 
     let htmlAree = `
         <div style="font-size:13px; font-weight:600; margin-bottom:6px;">
@@ -6044,6 +6073,139 @@ function chiudiRiepilogoPersona() {
 }
 
 /* =========================
+   ALADDIN CORE INTEGRATION
+========================= */
+
+/**
+ * Esegue AladdinCore solo quando tutti i dati sono disponibili
+ * (anagrafica completa + questionario completato)
+ */
+function eseguiAladdinAnalysis() {
+    // Verifica disponibilità classe AladdinCore (deve essere caricata da persona_aladdin.js)
+    if (typeof AladdinCore === "undefined") {
+        console.warn("⏳ AladdinCore non disponibile (persona_aladdin.js non caricato?)");
+        return;
+    }
+
+    // Verifica dati anagrafica minima
+    const ana = appStatePersona.user.anagrafica || {};
+    const hasAnagrafica = ana.nome && ana.cognome && (ana.codiceFiscale || ana.dataNascita);
+    
+    if (!hasAnagrafica) {
+        console.log("⏳ Aladdin in attesa: anagrafica incompleta");
+        return;
+    }
+
+    // Verifica questionario completato
+    const domande = getDomandePersona();
+    const risposte = appStatePersona.questionnaire.answers || {};
+    const risposteDate = Object.keys(risposte).length;
+    
+    if (domande.length === 0 || risposteDate < domande.length) {
+        console.log("⏳ Aladdin in attesa: questionario non completato");
+        return;
+    }
+
+    try {
+        console.log("🧞 Esecuzione AladdinCore...");
+        const aladdin = new AladdinCore(appStatePersona);
+        const report = aladdin.run();
+        
+        appStatePersona.aladdinReport = report;
+        
+        // Salva automaticamente in localStorage la bozza aggiornata
+        if (typeof salvaBozzaAnalisiPersona === "function") {
+            salvaBozzaAnalisiPersona();
+        }
+        
+        console.log("✅ AladdinCore completato", report);
+    } catch (err) {
+        console.error("❌ Errore esecuzione AladdinCore:", err);
+        appStatePersona.aladdinReport = null;
+    }
+}
+
+/**
+ * Render Fil Rouge (inferenze critiche e azioni consigliate)
+ */
+function renderFilRouge() {
+    const report = appStatePersona.aladdinReport;
+    if (!report || !report.filRouge) return;
+    
+    const container = document.getElementById("aladdinFilRougeContainer");
+    if (!container) return;
+    
+    const { inferenze, azioniConsigliate, alertCritici } = report.filRouge;
+    
+    let html = `<div style="margin-top:12px; padding:10px 12px; border-radius:10px; background:#fef2f2; border:1px solid #fecaca;">
+        <div style="font-size:13px; font-weight:700; color:#b91c1c; margin-bottom:6px;">🧵 Fil Rouge - Inferenze Critiche</div>`;
+    
+    if (inferenze && inferenze.length) {
+        html += `<ul style="font-size:12px; color:#4b5563; margin:0 0 8px 16px; padding:0;">`;
+        inferenze.forEach(inf => html += `<li style="margin-bottom:4px;">${inf}</li>`);
+        html += `</ul>`;
+    }
+    
+    if (azioniConsigliate && azioniConsigliate.length) {
+        html += `<div style="font-size:12px; font-weight:600; color:#111827; margin-top:8px;">Azioni consigliate:</div>
+                 <ul style="font-size:11px; color:#374151; margin:4px 0 0 16px; padding:0;">`;
+        azioniConsigliate.forEach(az => html += `<li style="margin-bottom:2px;">${az}</li>`);
+        html += `</ul>`;
+    }
+    
+    html += `</div>`;
+    container.innerHTML = html;
+}
+
+/**
+ * Render Timeline Aladdin (scadenze vs età figli)
+ */
+function renderTimeline() {
+    const report = appStatePersona.aladdinReport;
+    if (!report || !report.timelineFutura) return;
+    
+    const container = document.getElementById("aladdinTimelineContainer");
+    if (!container) return;
+    
+    const events = report.timelineFutura;
+    let html = `<div style="margin-top:12px; padding:10px 12px; border-radius:10px; background:#eff6ff; border:1px solid #bfdbfe;">
+        <div style="font-size:13px; font-weight:700; color:#1e40af; margin-bottom:6px;">📅 Caring Plan - Timeline Scadenze</div>
+        <div style="display:flex; flex-direction:column; gap:6px;">`;
+    
+    events.forEach(ev => {
+        html += `<div style="font-size:12px; padding:6px 8px; background:#ffffff; border-radius:6px; border-left:3px solid #3b82f6;">
+            <strong>${ev.anno || 'Prossimo'}</strong> - ${ev.evento || ev.descrizione}
+            ${ev.etaFiglio ? `<span style="color:#6b7280; font-size:11px;"> (età figlio: ${ev.etaFiglio})</span>` : ''}
+        </div>`;
+    });
+    
+    html += `</div></div>`;
+    container.innerHTML = html;
+}
+
+/**
+ * Render Alert Specifici Aladdin
+ */
+function renderAlert() {
+    const report = appStatePersona.aladdinReport;
+    if (!report || !report.alertCritici || !report.alertCritici.length) return;
+    
+    const container = document.getElementById("aladdinAlertContainer");
+    if (!container) return;
+    
+    let html = `<div style="margin-top:12px; padding:10px 12px; border-radius:10px; background:#fff7ed; border:1px solid #fed7aa;">
+        <div style="font-size:13px; font-weight:700; color:#9a3412; margin-bottom:6px;">⚠️ Alert Critici Aladdin</div>
+        <ul style="font-size:12px; color:#7c2d12; margin:0 0 0 16px; padding:0;">`;
+    
+    report.alertCritici.forEach(alert => {
+        html += `<li style="margin-bottom:4px;">${alert}</li>`;
+    });
+    
+    html += `</ul></div>`;
+    container.innerHTML = html;
+}
+
+/* =========================
    UTILITÀ ARCHIVIO / NUOVA ANALISI PERSONA
 ========================= */
 
@@ -6240,8 +6402,11 @@ if (!rec) {
         appStatePersona.user.polizze = Array.isArray(rec.polizze)
             ? rec.polizze.map(p => ({ ...p }))
             : [];
-        appStatePersona.questionnaire.answers = rec.risposte || {};
+                appStatePersona.questionnaire.answers = rec.risposte || {};
         appStatePersona.questionnaire.currentIndex = 0;
+        
+        // Ripristina Aladdin Report da archivio
+        appStatePersona.aladdinReport = rec.aladdinReport || null;
 
         // 2) Ripristina CARING
         const c = rec.caring || {};
