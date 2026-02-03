@@ -34,6 +34,48 @@ const Aladdin = {
     };
     
     console.log("👨‍👩‍👧‍👦 Stato familiare salvato:", statoFamiliare);
+    
+    // Ora collega i punti con il reddito!
+    this.collegaPunti(appState);
+    
+    return appState;
+  },
+
+  // Funzione che collega i punti (Fil Rouge Decisionale)
+  collegaPunti: function(appState) {
+    const fatti = appState.fattiCliente || {};
+    const connessioni = [];
+    
+    // Collegamento 1: Reddito + Famiglia = Necessità protezione
+    if (fatti.reddito && fatti.statoFamiliare) {
+      const reddito = fatti.reddito.valore;
+      const famiglia = fatti.statoFamiliare.valore;
+      
+      // Se reddito è alto (4-5) e ha figli → protezione massima
+      if (reddito >= 4 && famiglia === "con_figli") {
+        connessioni.push({
+          tipo: "protezione_critica",
+          descrizione: "Famiglia con reddito elevato da proteggere",
+          priorita: "massima"
+        });
+      }
+      // Se reddito è medio (2-3) e ha figli → protezione standard
+      else if (reddito >= 2 && famiglia === "con_figli") {
+        connessioni.push({
+          tipo: "protezione_standard",
+          descrizione: "Famiglia con reddito medio da proteggere",
+          priorita: "alta"
+        });
+      }
+    }
+    
+    // Salva le connessioni nel contenitore
+    appState.fattiCliente.connessioni = connessioni;
+    
+    console.log("🔗 Fil Rouge generato:", connessioni.length, "connessioni");
+    if (connessioni.length > 0) {
+      console.log("   →", connessioni[0].descrizione);
+    }
     return appState;
   }
   
