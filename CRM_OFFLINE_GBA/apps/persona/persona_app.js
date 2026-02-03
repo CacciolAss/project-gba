@@ -349,6 +349,26 @@ if (typeof initCopertureAttiveV2 === "function") {
             renderDomandaCorrentePersona();
         }
 
+        // ✅ AGGIUNGI DA QUI ----------
+        if (appStatePersona.aladdinReport) {
+            console.log("🧞 Render Aladdin da bozza ripristinata...");
+            if (typeof renderFilRouge === "function") renderFilRouge();
+            if (typeof renderTimeline === "function") renderTimeline();
+            if (typeof renderAlert === "function") renderAlert();
+            
+            // Se il questionario era completato, scrolla ai risultati
+            const domande = getDomandePersona();
+            const currentIdx = appStatePersona.questionnaire.currentIndex || 0;
+            if (currentIdx >= domande.length - 1) {
+                const risultatiSection = document.getElementById("risultatiPersonaSection");
+                if (risultatiSection) {
+                    setTimeout(() => {
+                        risultatiSection.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }, 300);
+                }
+            }
+        }
+
         if (typeof mostraToast === "function") {
             mostraToast("Bozza analisi persona ripristinata.", "info");
         }
