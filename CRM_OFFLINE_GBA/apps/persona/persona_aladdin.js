@@ -3,12 +3,10 @@ const Aladdin = {
   
   // Funzione che prende la risposta A1 (reddito) e la mette nel contesto
   salvaReddito: function(appState, importoReddito) {
-    // Controlla se esiste già il cassetto "fatti"
     if (!appState.fattiCliente) {
       appState.fattiCliente = {};
     }
     
-    // Mettiamo il reddito nel cassetto giusto
     appState.fattiCliente.reddito = {
       valore: importoReddito,
       quando: new Date().toLocaleDateString('it-IT'),
@@ -21,12 +19,10 @@ const Aladdin = {
   
   // Funzione che prende la risposta A2 (stato familiare) e la mette nel contesto  
   salvaStatoFamiliare: function(appState, statoFamiliare) {
-    // Controlla se esiste già il cassetto "fatti"
     if (!appState.fattiCliente) {
       appState.fattiCliente = {};
     }
     
-    // Mettiamo lo stato familiare nel cassetto giusto
     appState.fattiCliente.statoFamiliare = {
       valore: statoFamiliare,
       quando: new Date().toLocaleDateString('it-IT'),
@@ -34,10 +30,7 @@ const Aladdin = {
     };
     
     console.log("👨‍👩‍👧‍👦 Stato familiare salvato:", statoFamiliare);
-    
-    // Ora collega i punti con il reddito!
     this.collegaPunti(appState);
-    
     return appState;
   },
 
@@ -67,9 +60,16 @@ const Aladdin = {
           priorita: "alta"
         });
       }
+      // Se reddito è basso (1) e ha figli → protezione minima
+      else if (reddito == 1 && famiglia == 2) {
+        connessioni.push({
+          tipo: "protezione_bassa",
+          descrizione: "Famiglia con reddito basso: attenzione alla sottoprotezione",
+          priorita: "media"
+        });
+      }
     }
     
-    // Salva le connessioni nel contenitore
     appState.fattiCliente.connessioni = connessioni;
     
     console.log("🔗 Fil Rouge generato:", connessioni.length, "connessioni");
