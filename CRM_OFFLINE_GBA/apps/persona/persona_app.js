@@ -6156,11 +6156,24 @@ function renderFilRouge() {
     }
     
     if (azioniConsigliate && azioniConsigliate.length) {
-        html += `<div style="font-size:12px; font-weight:600; color:#111827; margin-top:8px;">Azioni consigliate:</div>
-                 <ul style="font-size:11px; color:#374151; margin:4px 0 0 16px; padding:0;">`;
-        azioniConsigliate.forEach(az => html += `<li style="margin-bottom:2px;">${az}</li>`);
-        html += `</ul>`;
-    }
+    html += `<div style="font-size:12px; font-weight:600; color:#111827; margin-top:8px;">Azioni consigliate:</div>
+             <ul style="font-size:11px; color:#374151; margin:4px 0 0 16px; padding:0;">`;
+    azioniConsigliate.forEach(az => {
+        // az è un oggetto con priorità, azione, target, motivazione, prodottoConsigliato
+        const azioneText = az.azione || 'Azione';
+        const targetText = az.target || '';
+        const motivazioneText = az.motivazione || '';
+        const prodottoText = az.prodottoConsigliato || '';
+        
+        html += `<li style="margin-bottom:6px; line-height:1.4;">
+            <div style="font-weight:600;">${azioneText}</div>
+            ${targetText ? `<div>Target: ${targetText}</div>` : ''}
+            ${motivazioneText ? `<div style="font-style:italic; color:#6b7280;">${motivazioneText}</div>` : ''}
+            ${prodottoText ? `<div style="color:#b91c1c; font-weight:500;">→ ${prodottoText}</div>` : ''}
+        </li>`;
+    });
+    html += `</ul>`;
+}
     
     html += `</div>`;
     container.innerHTML = html;
