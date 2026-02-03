@@ -187,11 +187,11 @@ class AladdinCore {
                 anniAllaPensione: 67 - this.anagraficaCompleta.eta
             },
             
-            situazioneEconomica: {
+                        situazioneEconomica: {
                 redditoProprio: reddito,
                 redditoFamiliare: redditoFam,
-                redditoPerCapite: redditoFam / componenti,
-                percentualeContributo: (reddito / redditoFam) * 100,
+                redditoPerCapite: componenti > 0 ? redditoFam / componenti : reddito,
+                percentualeContributo: redditoFam > 0 ? (reddito / redditoFam) * 100 : 100,
                 patrimonio: this.anagraficaCompleta.patrimonioFinanziario,
                 liquiditaMensile: this.calcolaLiquiditaMensile()
             },
