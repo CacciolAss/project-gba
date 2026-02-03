@@ -1,10 +1,7 @@
 // persona_aladdin.js
-// Aladdin Core - Architettura Fil Rouge Decisionale
+// Aladdin Core - Architettura Fil Rouge Decisionale (Versione Browser)
 
-import { QuestionarioPersona } from './persona_domande.js';
-import { ContestoPersona } from './persona_contesto.js';
-
-export class AladdinCore {
+class AladdinCore {
     constructor(appState) {
         this.appState = appState;
         this.clientTwin = null;
@@ -20,10 +17,8 @@ export class AladdinCore {
     analyze() {
         console.log("🏛️ ALADDIN: Inizializzazione analisi olistica...");
         
-        // 1. Anagrafica completa (esistente + campi da aggiungere)
         const anagrafica = this.appState.user.anagrafica || {};
         this.anagraficaCompleta = {
-            // Dati base
             nome: anagrafica.nome || '',
             cognome: anagrafica.cognome || '',
             codiceFiscale: anagrafica.codiceFiscale || '',
@@ -33,46 +28,29 @@ export class AladdinCore {
             sesso: anagrafica.sesso || '',
             professione: anagrafica.professione || '',
             situazioneLavorativa: anagrafica.situazioneLavorativa || '',
-            
-            // Dati economici
-            redditoAnnuoLordo: parseFloat(anagrafica.redditoAnnuoLordo) || 0,
+            redditoAnnuoLordo: parseFloat(anagrafica.redditoAnnuo) || 0,
             redditoFamiliareAnnuo: parseFloat(anagrafica.redditoFamiliareAnnuo) || 0,
-            numPercettoriNucleo: parseInt(anagrafica.numPercettoriNucleo) || 1,
-            componentiNucleo: parseInt(anagrafica.componentiNucleo) || 1,
+            numPercettoriNucleo: parseInt(anagrafica.numPercettoriReddito) || 1,
+            componentiNucleo: parseInt(anagrafica.nucleoComponenti) || 1,
             patrimonioFinanziario: parseFloat(anagrafica.patrimonioFinanziario) || 0,
-            
-            // Dati familiari (CAMPI DA AGGIUNGERE ALLA UI)
             figliMinorenni: parseInt(anagrafica.figliMinorenni) || 0,
-            figliMaggiorenniConviventi: parseInt(anagrafica.figliMaggiorenniConviventi) || 0, // DA AGGIUNGERE
-            statoCivile: anagrafica.statoCivile || 'non_specificato', // DA AGGIUNGERE (celibe/nubile, coniugato, divorziato, vedovo)
-            
-            // Dati previdenziali
-            anniContributivi: parseInt(anagrafica.anniContributivi) || 0,
-            
-            // Contatti
+            figliMaggiorenniConviventi: parseInt(anagrafica.figliMaggiorenniConviventi) || 0,
+            statoCivile: anagrafica.statoCivile || 'non_specificato',
+            anniContributivi: parseInt(anagrafica.anniContributiTotali) || 0,
             emailCliente: anagrafica.emailCliente || '',
-            telefono: anagrafica.telefono || '',
+            telefono: anagrafica.telefonoCliente || '',
             citta: anagrafica.citta || '',
             provincia: anagrafica.provincia || '',
             cap: anagrafica.cap || '',
-            
-            // Metadati
             consulenteEmail: anagrafica.consulenteEmail || ''
         };
 
-        // 2. Polizze e Coperture (gestione campi differenziati)
         this.polizzeRaw = this.appState.user.polizze || [];
-        this.copertureV2 = this.appState.user.copertureAttiveV2 || {};
+        this.copertureV2 = this.appState.user.copertureAttive || {};
         
         this.portfolioAssicurativo = this.processaPolizze(this.polizzeRaw, this.copertureV2);
-        
-        // 3. Risposte Questionario (A1-C8)
         this.risposte = this.appState.questionnaire?.answers || {};
-        
-        // 4. Risultati calcolati dal sistema (gap, normotipo, semaforo)
         this.risultatiSistema = this.appState.risultati || {};
-        
-        // 5. Calcolo età figli (simulazione se non abbiamo date precise, usando età media)
         this.datiFigli = this.calcolaDatiFigli();
         
         console.log("✅ ALADDIN: Dati acquisiti", {
@@ -86,7 +64,7 @@ export class AladdinCore {
     }
 
     // ========================================================================
-    // 2. PROCESSAMENTO POLIZZE (TCM/Infortuni hanno capitaleIP)
+    // 2. PROCESSAMENTO POLIZZE
     // ========================================================================
     
     processaPolizze(polizze, copertureV2) {
@@ -98,7 +76,6 @@ export class AladdinCore {
             scadenzeProssime: []
         };
 
-        // Processa coperture V2 (dalla UI con campi differenziati)
         const tipiCopertura = [
             'pac', 'pip', 'tfr', 'infortuni', 'sanitaria', 'casa', 
             'cat_nat', 'rc_capofamiglia', 'rc_auto_moto', 'ltc', 
@@ -117,26 +94,22 @@ export class AladdinCore {
                     attiva: true
                 };
 
-                // CAMPI SPECIFICI per TCM e Infortuni (hanno capitale IP)
                 if (tipo === 'tcm' || tipo === 'infortuni') {
-                    copertura.capitaleIP = parseFloat(c.capitaleEuro) || 0; // Capitale In caso di Premio/IP
-                    copertura.capitaleDecesso = parseFloat(c.capitaleEuro) || 0; // Per TCM è il capitale morte
+                    copertura.capitaleIP = parseFloat(c.capitaleEuro) || 0;
+                    copertura.capitaleDecesso = parseFloat(c.capitaleEuro) || 0;
                 }
                 
-                // Per Invalidità/Malattia Grave
                 if (tipo === 'invalidita') {
                     copertura.capitaleInvalidita = parseFloat(c.capitaleEuro) || 0;
                 }
 
-                // Per Protezione Reddito (Diaria)
                 if (tipo === 'protezione_reddito') {
-                    copertura.diariaMensile = parseFloat(c.capitaleEuro) || 0; // O campo specifico se esiste
+                    copertura.diariaMensile = parseFloat(c.capitaleEuro) || 0;
                 }
 
                 portfolio.coperture[tipo] = copertura;
                 portfolio.premioAnnuoTotale += copertura.premioAnnuo;
 
-                // Alert scadenze prossime (entro 24 mesi)
                 if (c.scadenza) {
                     const scadenza = new Date(c.scadenza);
                     const mesiRimanenti = this.mesiRimanenti(scadenza);
@@ -159,17 +132,14 @@ export class AladdinCore {
         const numMinorenni = this.anagraficaCompleta.figliMinorenni;
         const numMaggiorenni = this.anagraficaCompleta.figliMaggiorenniConviventi;
         
-        // Se non abbiamo le età precise, assumiamo distribuzione standard
-        // o leggiamo da un campo futuro "etaFigli" array
         const figli = [];
         
-        // Simulazione età medie per calcolo caring (può essere raffinato con dati reali)
         for (let i = 0; i < numMinorenni; i++) {
             figli.push({ 
                 id: i, 
-                eta: 10, // media ipotetica, da sostituire con dati reali se disponibili
+                eta: 10,
                 tipo: 'minorenne',
-                anniAllaMaggiorEta: 8 // 18 - 10
+                anniAllaMaggiorEta: 8
             });
         }
         
@@ -178,7 +148,7 @@ export class AladdinCore {
                 id: i + numMinorenni, 
                 eta: 20, 
                 tipo: 'maggiorenne_convivente',
-                anniAllaIndipendenza: 5 // stima
+                anniAllaIndipendenza: 5
             });
         }
         
@@ -186,13 +156,13 @@ export class AladdinCore {
             lista: figli,
             totale: numMinorenni + numMaggiorenni,
             haFigli: (numMinorenni + numMaggiorenni) > 0,
-            etaMinore: numMinorenni > 0 ? 5 : null, // assume il più piccolo abbia 5 anni se non specificato
+            etaMinore: numMinorenni > 0 ? 5 : null,
             tuttiMaggiorenni: numMinorenni === 0 && numMaggiorenni > 0
         };
     }
 
     // ========================================================================
-    // 3. COSTRUZIONE CLIENT TWIN (Gemello Digitale)
+    // 3. COSTRUZIONE CLIENT TWIN
     // ========================================================================
     
     buildClientTwin() {
@@ -202,20 +172,18 @@ export class AladdinCore {
         const redditoFam = this.anagraficaCompleta.redditoFamiliareAnnuo;
         const componenti = this.anagraficaCompleta.componentiNucleo;
         
-        // Analisi coperture attuali
         const coperturaMorte = this.portfolioAssicurativo.coperture.tcm?.capitaleDecesso || 0;
         const coperturaInvalidita = this.portfolioAssicurativo.coperture.invalidita?.capitaleInvalidita || 0;
         const coperturaInfortuni = this.portfolioAssicurativo.coperture.infortuni?.capitaleIP || 0;
         const diariaReddito = this.portfolioAssicurativo.coperture.protezione_reddito?.diariaMensile || 0;
 
-        // Gap calcolati dal sistema (se disponibili) o calcolati ora
-        const gapMorte = this.risultatiSistema.gapStatale?.morte || (reddito * 5 - coperturaMorte); // stima 5 anni
-        const gapInvalidita = this.risultatiSistema.gapStatale?.invalidita || (reddito * 0.7 - coperturaInvalidita);
+        const gapMorte = this.risultatiSistema.gapStatale?.morte?.gap || (reddito * 5 - coperturaMorte);
+        const gapInvalidita = this.risultatiSistema.gapStatale?.invalidita?.gap || (reddito * 0.7 - coperturaInvalidita);
         
         this.clientTwin = {
             identita: {
                 ...this.anagraficaCompleta,
-                etaPensionabile: 67, // o calcolata dinamicamente
+                etaPensionabile: 67,
                 anniAllaPensione: 67 - this.anagraficaCompleta.eta
             },
             
@@ -232,7 +200,6 @@ export class AladdinCore {
                 ...this.datiFigli,
                 componentiNucleo: componenti,
                 numPercettori: this.anagraficaCompleta.numPercettoriNucleo,
-                // Analisi dipendenza economica
                 dipendenzaEconomica: this.calcolaDipendenzaEconomica()
             },
             
@@ -250,7 +217,7 @@ export class AladdinCore {
             gap: {
                 morte: Math.max(0, gapMorte),
                 invalidita: Math.max(0, gapInvalidita),
-                reddito: Math.max(0, (reddito * 0.7 / 12) - diariaReddito), // 70% reddito come diaria ideale
+                reddito: Math.max(0, (reddito * 0.7 / 12) - diariaReddito),
                 scopertureCritiche: []
             },
             
@@ -260,7 +227,6 @@ export class AladdinCore {
             anniContributivi: this.anagraficaCompleta.anniContributivi
         };
 
-        // Identificazione scoperture critiche specifiche
         this.identificaScopertureCritiche();
 
         console.log("✅ ALADDIN: Client Twin creato", {
@@ -272,37 +238,28 @@ export class AladdinCore {
     }
 
     // ========================================================================
-    // 4. ANALISI PERCEZIONI (Incongruenze Psicometriche)
+    // 4. ANALISI PERCEZIONI
     // ========================================================================
     
     analizzaPercezioni() {
         const r = this.risposte;
         
-        // A1: Percezione protezione economica (1-5)
         const percezioneProt = parseInt(r.A1) || 3;
         
-        // A2: Autonomia mesi di sostentamento (1-5 -> mesi)
         const autonomiaMap = {1: 3, 2: 6, 3: 12, 4: 24, 5: 36};
         const mesiAutonomia = autonomiaMap[parseInt(r.A2)] || 12;
         
-        // B3: Liquidità reale (fino a X mesi)
         const liquiditaReale = parseInt(r.B3) || 0;
-        
-        // A4: Fiducia SSN (1-5)
         const fiduciaSSN = parseInt(r.A4) || 3;
         
-        // Mappatura percezione vs realtà
         const gapCopertura = this.clientTwin?.gap.morte || 0;
         const reddito = this.anagraficaCompleta.redditoAnnuoLordo;
         
-        // Se percepisce alta protezione (4-5) ma ha gap enorme = INCONGRUENZA
         const incongruenzaProtezione = (percezioneProt >= 4 && gapCopertura > reddito * 2);
-        
-        // Se dice di avere liquidità per 24+ mesi (A2=4-5) ma B3 dice <6 mesi = CONTRADDIZIONE
         const contraddizioneLiquidita = (parseInt(r.A2) >= 4 && liquiditaReale < 6);
         
         return {
-            livelloProtezionePercepito: percezioneProt, // 1-5
+            livelloProtezionePercepito: percezioneProt,
             mesiAutonomiaPercepiti: mesiAutonomia,
             liquiditaRealeMesi: liquiditaReale,
             fiduciaSSN: fiduciaSSN,
@@ -316,8 +273,6 @@ export class AladdinCore {
     }
 
     calcolaProfiloRischioPsicometrico(risposte) {
-        // Logica semplificata per profilo psicometrico
-        // C1-C8: Preoccupazioni specifiche
         const preoccupazioni = [];
         if (risposte.C1 === '1') preoccupazioni.push('decesso');
         if (risposte.C2 === '1') preoccupazioni.push('invalidita');
@@ -337,7 +292,7 @@ export class AladdinCore {
     }
 
     // ========================================================================
-    // 5. GENERAZIONE FIL ROUGE (Il Percorso Decisionale)
+    // 5. GENERAZIONE FIL ROUGE
     // ========================================================================
     
     generateFilRouge() {
@@ -348,15 +303,11 @@ export class AladdinCore {
         const azioniConsigliate = [];
         const alertCritici = [];
 
-        // =================================================================
-        // INFERENZA 1: Protezione Morte vs Figli Minorenni
-        // =================================================================
         if (twin.famiglia.haFigli && twin.famiglia.figliMinorenni > 0) {
             const anniAllaMaggiorEtaFiglioPiuPiccolo = Math.min(...twin.famiglia.lista
                 .filter(f => f.tipo === 'minorenne')
                 .map(f => f.anniAllaMaggiorEta));
             
-            // Se ha figli piccoli e gap morte > 0
             if (twin.gap.morte > 0) {
                 inferenze.push({
                     tipo: 'RISCHIO_FAMILIARE_CRITICO',
@@ -365,7 +316,6 @@ export class AladdinCore {
                     impatto: `Fino alla maggiore età del figlio più piccolo (${anniAllaMaggiorEtaFiglioPiuPiccolo} anni), la famiglia avrebbe bisogno di €${(twin.situazioneEconomica.redditoProprio * anniAllaMaggiorEtaFiglioPiuPiccolo).toLocaleString()} per mantenere il tenore di vita.`
                 });
 
-                // Caring Temporale: se ha TCM che scade prima che figli diventino maggiorenni
                 const scadenzaTCM = this.portfolioAssicurativo.scadenzeProssime
                     .find(s => s.tipo === 'tcm');
                 
@@ -375,8 +325,8 @@ export class AladdinCore {
                     alertCritici.push({
                         tipo: 'SCADENZA_TCM_PRECOCE',
                         severita: 'CRITICA',
-                        messaggio: `ATTENZIONE: La polizza TCM scade tra ${scadenzaTCM.mesiRimanenti} mesi. Il figlio più piccolo avrà solo ${Math.floor(etaFiglioAllaScadenza)} anni. Se il capitale non viene rinnovato/adeguato, resteranno scoperti per ${Math.ceil(anniAllaMaggiorEtaFiglioPiuPiccolo - (scadenzaTCM.mesiRimanenti/12))} anni critici.`,
-                        azione: `Rinnovo con capitale adeguato al reddito attuale (€${twin.situazioneEconomica.redditoProprio.toLocaleString()}/anno) oppure conversione in polizza a premio level con durata fino a 80 anni.`
+                        messaggio: `ATTENZIONE: La polizza TCM scade tra ${scadenzaTCM.mesiRimanenti} mesi. Il figlio più piccolo avrà solo ${Math.floor(etaFiglioAllaScadenza)} anni.`,
+                        azione: `Rinnovo con capitale adeguato al reddito attuale o conversione in polizza a premio level con durata fino a 80 anni.`
                     });
                 }
 
@@ -390,13 +340,9 @@ export class AladdinCore {
             }
         }
 
-        // =================================================================
-        // INFERENZA 2: Mutuo e Copertura Quota Parte
-        // =================================================================
         if (this.portfolioAssicurativo.coperture.casa?.attiva && 
             this.portfolioAssicurativo.coperture.casa.note?.toLowerCase().includes('mutuo')) {
             
-            // Se ha mutuo coperto solo parzialmente (deduzione dalla nota o da campo specifico futuro)
             const notaCasa = this.portfolioAssicurativo.coperture.casa.note || '';
             const quotaParte = notaCasa.includes('50%') || notaCasa.includes('metà') || notaCasa.includes('quota parte');
             
@@ -412,16 +358,13 @@ export class AladdinCore {
                     tipo: 'RISCHIO_SUPERSTITE_MUTUO',
                     severita: 'ALTA',
                     messaggio: 'Il superstite potrebbe essere costretto a vendere la casa per saldare la quota mutuo non coperta.',
-                    azione: 'Integrare con TCM specifica per estinzione mutuo totale o assicurazione sul credito per la quota mancante.'
+                    azione: 'Integrare con TCM specifica per estinzione mutuo totale.'
                 });
             }
         }
 
-        // =================================================================
-        // INFERENZA 3: Lavoro Autonomo e Protezione Reddito
-        // =================================================================
-        if (twin.identita.situazioneLavorativa === 'Autonomo' || 
-            twin.identita.situazioneLavorativa === 'Libero Professionista') {
+        if (twin.identita.situazioneLavorativa === 'autonomo' || 
+            twin.identita.situazioneLavorativa === 'imprenditore') {
             
             const coperturaReddito = twin.copertureAttuali.reddito.diariaMensile;
             const redditoMensile = twin.situazioneEconomica.redditoProprio / 12;
@@ -431,7 +374,7 @@ export class AladdinCore {
                     tipo: 'AUTONOMO_SENZA_PARACADUTE',
                     priorita: 'CRITICA',
                     descrizione: 'Lavoratore autonomo con protezione reddito insufficiente.',
-                    impatto: `In caso di inabilità temporanea, la diaria attuale (€${coperturaReddito}) copre meno del 50% del reddito mensile (€${redditoMensile.toFixed(0)}).`
+                    impatto: `In caso di inabilità temporanea, la diaria attuale (€${coperturaReddito}) copre meno del 50% del reddito mensile.`
                 });
 
                 azioniConsigliate.push({
@@ -443,7 +386,6 @@ export class AladdinCore {
                 });
             }
 
-            // Se autonomo e non ha TCM o ha poca
             if (twin.gap.morte > twin.situazioneEconomica.redditoProprio * 2) {
                 inferenze.push({
                     tipo: 'AUTONOMO_RISCHIO_ESTINZIONE',
@@ -454,30 +396,22 @@ export class AladdinCore {
             }
         }
 
-        // =================================================================
-        // INFERENZA 4: Incongruenza Percezionale (Anti-Bias)
-        // =================================================================
         if (twin.percezioni.incongruenze.sovrastimaProtezione) {
             inferenze.push({
                 tipo: 'BIAS_OTTIMISMO',
                 priorita: 'MEDIA',
                 descrizione: 'Il cliente percepisce un livello di protezione superiore alla realtà oggettiva.',
-                impatto: 'Rischio di sottovalutazione della necessità di coperture aggiuntive.',
-                azioneComportamentale: 'Mostrare il calcolo del gap reale vs percezione attraverso simulazione scenario.'
+                impatto: 'Rischio di sottovalutazione della necessità di coperture aggiuntive.'
             });
         }
 
-        // =================================================================
-        // INFERENZA 5: Previdenza e Long Term Care (Età > 50)
-        // =================================================================
         if (twin.identita.eta >= 50 && !twin.copertureAttuali.longTermCare.attiva) {
             const anniAllaPensione = twin.identita.anniAllaPensione;
             
             inferenze.push({
                 tipo: 'LTC_FUTURA_NECESSITA',
                 priorita: 'MEDIA',
-                descrizione: `A ${twin.identita.eta} anni, con ${anniAllaPensione} anni alla pensione, la probabilità di eventi LTC aumenta.`,
-                impatto: 'Costi sanitari non coperti da SSN potrebbero erodere il patrimonio familiare.'
+                descrizione: `A ${twin.identita.eta} anni, con ${anniAllaPensione} anni alla pensione, la probabilità di eventi LTC aumenta.`
             });
 
             if (twin.percezioni.profiloRischio.allarmeSanitario) {
@@ -486,14 +420,11 @@ export class AladdinCore {
                     azione: 'LTC_PREVENTIVA',
                     target: 'Copertura LTC con capitale giornaliero',
                     motivazione: 'Esplicitata preoccupazione per malattia grave/cure lunghe',
-                    prodottoConsigliato: 'General Long Term Care con premio agevolato per sottoscrizione anticipata'
+                    prodottoConsigliato: 'General Long Term Care con premio agevolato'
                 });
             }
         }
 
-        // =================================================================
-        // INFERENZA 6: Analisi Timeline Futura (Caring)
-        // =================================================================
         const timelineEventi = this.generaTimelineEventi();
         
         this.filRouge = {
@@ -516,7 +447,7 @@ export class AladdinCore {
     }
 
     // ========================================================================
-    // 6. CARING TEMPORALE (Timeline Eventi Futuri)
+    // 6. CARING TEMPORALE
     // ========================================================================
     
     generaTimelineEventi() {
@@ -524,69 +455,39 @@ export class AladdinCore {
         const oggi = new Date();
         const annoCorrente = oggi.getFullYear();
         
-        // Eventi Figli
         this.datiFigli.lista.forEach((figlio, index) => {
             if (figlio.tipo === 'minorenne') {
-                // Maggiore età
                 const annoMaggiorEta = annoCorrente + figlio.anniAllaMaggiorEta;
                 eventi.push({
                     anno: annoMaggiorEta,
                     eta: 18,
                     evento: `Figlio ${index + 1} raggiunge la maggiore età`,
-                    tipo: 'FAMIGLIA',
-                    implicazione: 'Fine obbligo mantenimento legale, ma possibile necessità supporto università',
-                    checkAssicurativo: 'Verificare se TCM ancora necessaria per altri figli o per protezione patrimoniale'
+                    tipo: 'FAMIGLIA'
                 });
             }
         });
 
-        // Scadenze Polizze
         this.portfolioAssicurativo.scadenzeProssime.forEach(scadenza => {
             const dataScadenza = new Date(scadenza.data);
             const annoScadenza = dataScadenza.getFullYear();
-            const mesiMancanti = scadenza.mesiRimanenti;
             
             eventi.push({
                 anno: annoScadenza,
-                mesiDaOggi: mesiMancanti,
+                mesiDaOggi: scadenza.mesiRimanenti,
                 evento: `Scadenza ${scadenza.tipo.toUpperCase()}`,
                 tipo: 'SCADENZA',
-                capitaleCoinvolto: scadenza.capitaleCoinvolto,
-                implicazione: mesiMancanti < 12 ? 'URGENTE: Rinnovo immediato necessario' : 'Pianificare rinnovo o sostituzione',
-                azioneConsigliata: this.generaAzioneScadenza(scadenza)
+                capitaleCoinvolto: scadenza.capitaleCoinvolto
             });
         });
 
-        // Pensione
         const annoPensione = annoCorrente + this.clientTwin.identita.anniAllaPensione;
         eventi.push({
             anno: annoPensione,
             evento: 'Pensione di vecchiaia',
-            tipo: 'PREVIDENZA',
-            implicazione: 'Riduzione reddito, necessità LTC aumenta',
-            checkAssicurativo: 'Valutare conversione polizze vita in polizze LTC o rendite'
+            tipo: 'PREVIDENZA'
         });
 
-        // Ordina per anno
         return eventi.sort((a, b) => a.anno - b.anno);
-    }
-
-    generaAzioneScadenza(scadenza) {
-        const tipo = scadenza.tipo;
-        const mesi = scadenza.mesiRimanenti;
-        
-        if (tipo === 'tcm') {
-            if (this.datiFigli.figliMinorenni > 0) {
-                return 'Rinnovare con capitale adeguato fino a copertura completa dipendenza figli';
-            } else {
-                return 'Valutare conversione in polizza a premio level per copertura perpetua eredi';
-            }
-        } else if (tipo === 'infortuni') {
-            return 'Rinnovare solo se attività lavorativa rischiosa, altrimenti integrare in protezione reddito';
-        } else if (tipo === 'sanitaria') {
-            return 'Rinnovo obbligatorio, verificare se serve upgrade con copertura LTC integrata';
-        }
-        return 'Verificare condizioni di rinnovo e comparare mercato';
     }
 
     // ========================================================================
@@ -594,10 +495,8 @@ export class AladdinCore {
     // ========================================================================
     
     calcolaLiquiditaMensile() {
-        // Stima semplificata: patrimonio / 12 per liquidità annuale ipotetica
-        // + reddito mensile
         const redditoMensile = this.anagraficaCompleta.redditoAnnuoLordo / 12;
-        const liquiditaPatrimonio = this.anagraficaCompleta.patrimonioFinanziario * 0.05 / 12; // 5% annuo utilizzabile
+        const liquiditaPatrimonio = this.anagraficaCompleta.patrimonioFinanziario * 0.05 / 12;
         return redditoMensile + liquiditaPatrimonio;
     }
 
@@ -607,12 +506,10 @@ export class AladdinCore {
         const redditoTotale = this.anagraficaCompleta.redditoFamiliareAnnuo;
         const redditoQuesto = this.anagraficaCompleta.redditoAnnuoLordo;
         
-        // Se è l'unico percettore, dipendenza massima
         if (percettori === 1 && componenti > 1) {
             return { livello: 'MASSIMA', percentuale: 100, descrizione: 'Unico percettore del nucleo familiare' };
         }
         
-        // Se contribuisce per >70% del reddito familiare
         if ((redditoQuesto / redditoTotale) > 0.7) {
             return { livello: 'ALTA', percentuale: (redditoQuesto/redditoTotale)*100, descrizione: 'Contributo prevalente al reddito familiare' };
         }
@@ -627,16 +524,11 @@ export class AladdinCore {
         let livello = 'BASSO';
         let fattori = [];
         
-        // Situazione lavorativa
-        if (situazione === 'Autonomo' || situazione === 'Libero Professionista') {
+        if (situazione === 'autonomo' || situazione === 'imprenditore') {
             livello = 'ALTO';
             fattori.push('Lavoro autonomo senza tutela INPS');
-        } else if (situazione === 'Committente') {
-            livello = 'MEDIO';
-            fattori.push('Committente con protezione limitata');
         }
         
-        // Professioni ad alto rischio
         const rischioAlto = ['edile', 'operaio', 'conducente', 'pilota', 'pescatore', 'minatore', 'metalmeccanico'];
         if (rischioAlto.some(r => professione.includes(r))) {
             livello = 'ALTO';
@@ -661,24 +553,18 @@ export class AladdinCore {
     }
 
     calcolaPunteggioProtezione() {
-        // Punteggio 0-100 della protezione attuale
         let punteggio = 0;
         const twin = this.clientTwin;
         
-        // Morte (max 40 punti)
         const coperturaMorte = twin.copertureAttuali.morte.capitale;
         const necessarioMorte = twin.situazioneEconomica.redditoProprio * 5;
         punteggio += Math.min(40, (coperturaMorte / necessarioMorte) * 40);
         
-        // Invalidità (max 30 punti)
         const coperturaInv = twin.copertureAttuali.invalidita.capitale;
         const necessarioInv = twin.situazioneEconomica.redditoProprio * 3;
         punteggio += Math.min(30, (coperturaInv / necessarioInv) * 30);
         
-        // Reddito (max 20 punti)
         if (twin.copertureAttuali.reddito.diariaMensile > 0) punteggio += 20;
-        
-        // Sanitaria/LTC (max 10 punti)
         if (twin.copertureAttuali.sanitaria.attiva) punteggio += 5;
         if (twin.copertureAttuali.longTermCare.attiva) punteggio += 5;
         
@@ -707,40 +593,11 @@ export class AladdinCore {
             },
             clientTwin: this.clientTwin,
             filRouge: this.filRouge,
-            sintesiConsulente: this.generaSintesiPerConsulente()
+            timelineFutura: this.filRouge.timelineFutura,
+            punteggioProtezione: this.filRouge.punteggioProtezione
         };
     }
 
-    generaSintesiPerConsulente() {
-        const twin = this.clientTwin;
-        const fil = this.filRouge;
-        
-        let sintesi = `=== ANALISI CLIENTE ${twin.identita.nome} ${twin.identita.cognome} ===\n\n`;
-        sintesi += `SITUAZIONE: ${twin.identita.eta} anni, ${twin.identita.situazioneLavorativa}, `;
-        sintesi += `Reddito €${twin.situazioneEconomica.redditoProprio.toLocaleString()}/anno\n`;
-        sintesi += `FAMIGLIA: ${twin.famiglia.componentiNucleo} componenti, ${twin.famiglia.figliMinorenni} figli minori\n`;
-        sintesi += `PROTEZIONE ATTUALE: ${fil.punteggioProtezione}/100 punti\n\n`;
-        
-        sintesi += `ALERT CRITICI:\n`;
-        fil.alertCritici.forEach(alert => {
-            sintesi += `🚨 [${alert.severita}] ${alert.messaggio}\n`;
-        });
-        
-        sintesi += `\nAZIONI PRIORITARIE:\n`;
-        fil.azioniConsigliate.forEach((azione, idx) => {
-            sintesi += `${idx+1}. ${azione.azione} - Target: ${azione.target}\n   Motivo: ${azione.motivazione}\n`;
-        });
-        
-        sintesi += `\nTIMELINE PROSSIMA SCADENZA:\n`;
-        const prossimiEventi = fil.timelineFutura.slice(0, 3);
-        prossimiEventi.forEach(ev => {
-            sintesi += `- ${ev.anno}: ${ev.evento} (${ev.tipo})\n`;
-        });
-        
-        return sintesi;
-    }
-
-    // Metodo principale
     run() {
         this.analyze();
         this.buildClientTwin();
@@ -749,5 +606,5 @@ export class AladdinCore {
     }
 }
 
-// Export per utilizzo
-export default AladdinCore;
+// Esportazione per browser (globale)
+window.AladdinCore = AladdinCore;
