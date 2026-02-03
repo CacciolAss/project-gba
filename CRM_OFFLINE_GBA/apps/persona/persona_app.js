@@ -349,22 +349,34 @@ if (typeof initCopertureAttiveV2 === "function") {
             renderDomandaCorrentePersona();
         }
 
-        // ✅ AGGIUNGI DA QUI ----------
+                // ✅ AGGIUNGI DA QUI (CORRETTO) ----------
         if (appStatePersona.aladdinReport) {
-            console.log("🧞 Render Aladdin da bozza ripristinata...");
-            if (typeof renderFilRouge === "function") renderFilRouge();
-            if (typeof renderTimeline === "function") renderTimeline();
-            if (typeof renderAlert === "function") renderAlert();
+            // Verifica che i dati anagrafici siano effettivamente presenti prima di mostrare Aladdin
+            const ana = appStatePersona.user?.anagrafica || {};
+            const hasAnagrafica = !!(ana.codiceFiscale || (ana.nome && ana.cognome && ana.dataNascita));
             
-            // Se il questionario era completato, scrolla ai risultati
-            const domande = getDomandePersona();
-            const currentIdx = appStatePersona.questionnaire.currentIndex || 0;
-            if (currentIdx >= domande.length - 1) {
-                const risultatiSection = document.getElementById("risultatiPersonaSection");
-                if (risultatiSection) {
-                    setTimeout(() => {
-                        risultatiSection.scrollIntoView({ behavior: "smooth", block: "start" });
-                    }, 300);
+            if (!hasAnagrafica) {
+                console.warn("⚠️ Bozza con Aladdin trovata ma anagrafica incompleta. Render posticipato.");
+                // Non mostriamo Aladdin finché l'utente non completa l'anagrafica
+            } else {
+                console.log("🧞 Render Aladdin da bozza ripristinata...");
+                // Defer per assicurare che il DOM sia completamente pronto
+                setTimeout(() => {
+                    if (typeof renderFilRouge === "function") renderFilRouge();
+                    if (typeof renderTimeline === "function") renderTimeline();
+                    if (typeof renderAlert === "function") renderAlert();
+                }, 100);
+                
+                // Se il questionario era completato, scrolla ai risultati
+                const domande = getDomandePersona();
+                const currentIdx = appStatePersona.questionnaire.currentIndex || 0;
+                if (currentIdx >= domande.length - 1) {
+                    const risultatiSection = document.getElementById("risultatiPersonaSection");
+                    if (risultatiSection) {
+                        setTimeout(() => {
+                            risultatiSection.scrollIntoView({ behavior: "smooth", block: "start" });
+                        }, 300);
+                    }
                 }
             }
         }
@@ -1821,14 +1833,14 @@ if (revINPS.eligible === false) {
     gap.morte.copertura = coperturaMorte;
     gap.morte.gap = Math.max(0, gap.morte.adeguato - gap.morte.copertura);
 
-   // ======================
+// ======================
 // TCM ATTIVA (COPERTURE ATTIVE V2)
 // ======================
 
 // Lettura capitale TCM inserito manualmente (se presente)
 let capitaleTCM = null;
 try {
-    const copV2 = appStatePersona?.user?.copertureAttiveV2 || {};
+    const copV2 = appStatePersona?.user?.copertureAttive || {};
     const tcm = copV2.tcm || null;
     const cap = tcm && tcm.capitaleEuro != null ? Number(tcm.capitaleEuro) : null;
     if (isFinite(cap) && cap > 0) {
