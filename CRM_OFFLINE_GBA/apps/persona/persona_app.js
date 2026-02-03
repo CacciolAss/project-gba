@@ -6210,17 +6210,42 @@ function renderTimeline() {
  */
 function renderAlert() {
     const report = appStatePersona.aladdinReport;
-    if (!report || !report.alertCritici || !report.alertCritici.length) return;
+    if (!report || !report.filRouge || !report.filRouge.alertCritici || !report.filRouge.alertCritici.length) return;
     
     const container = document.getElementById("aladdinAlertContainer");
     if (!container) return;
+    
+    const alertCritici = report.filRouge.alertCritici;
     
     let html = `<div style="margin-top:12px; padding:10px 12px; border-radius:10px; background:#fff7ed; border:1px solid #fed7aa;">
         <div style="font-size:13px; font-weight:700; color:#9a3412; margin-bottom:6px;">⚠️ Alert Critici Aladdin</div>
         <ul style="font-size:12px; color:#7c2d12; margin:0 0 0 16px; padding:0;">`;
     
-    report.alertCritici.forEach(alert => {
-        html += `<li style="margin-bottom:4px;">${alert}</li>`;
+    alertCritici.forEach(alert => {
+        // alert è un oggetto: { tipo, severita, messaggio, azione }
+        const tipo = alert.tipo || 'ALERT';
+        const severita = alert.severita || 'MEDIA';
+        const messaggio = alert.messaggio || '';
+        const azione = alert.azione || '';
+        
+        // Colori in base alla severità
+        let badgeColor = '#9a3412'; // default arancione
+        let bgColor = '#ffedd5';
+        if (severita === 'CRITICA' || severita === 'ALTA') {
+            badgeColor = '#dc2626'; // rosso
+            bgColor = '#fee2e2';
+        } else if (severita === 'MEDIA') {
+            badgeColor = '#ea580c'; // arancione
+        }
+        
+        html += `<li style="margin-bottom:8px; line-height:1.4;">
+            <div style="display:flex; align-items:center; gap:6px; margin-bottom:2px;">
+                <span style="font-size:10px; background:${bgColor}; color:${badgeColor}; padding:2px 8px; border-radius:999px; font-weight:600; border:1px solid ${badgeColor};">${severita}</span>
+                <span style="font-weight:600; color:#111827;">${tipo.replace(/_/g, ' ')}</span>
+            </div>
+            <div style="margin-left:4px; margin-bottom:2px;">${messaggio}</div>
+            ${azione ? `<div style="margin-left:4px; font-size:11px; color:#059669; font-style:italic;">→ Azione: ${azione}</div>` : ''}
+        </li>`;
     });
     
     html += `</ul></div>`;
