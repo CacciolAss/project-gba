@@ -1280,42 +1280,47 @@ ${(isTCM || isInfortuni) ? `
 
     container.innerHTML = html;
 
-    // Bindings
-    container.querySelectorAll(".coperturaV2Check").forEach(el => {
-        el.addEventListener("change", (e) => {
-            const key = e.target.getAttribute("data-copertura-key");
-            if (!key) return;
+        // ✅ EVENT DELEGATION - Un solo listener per tutto, niente memory leak
+    container.addEventListener("change", (e) => {
+        const target = e.target;
+        const key = target.getAttribute("data-copertura-key");
+        if (!key) return;
 
+        if (target.classList.contains("coperturaV2Check")) {
             const rec = appStatePersona.user.copertureAttive[key];
-            rec.active = e.target.checked === true;
-
+            rec.active = target.checked === true;
             const details = container.querySelector(`[data-copertura-details="${key}"]`);
             if (details) details.style.display = rec.active ? "" : "none";
-        });
-    });
-
-    container.querySelectorAll(".coperturaV2Compagnia").forEach(el => {
-        el.addEventListener("change", (e) => {
-            const key = e.target.getAttribute("data-copertura-key");
-            if (!key) return;
-
+        }
+        else if (target.classList.contains("coperturaV2Compagnia")) {
             const rec = appStatePersona.user.copertureAttive[key];
-            rec.compagnia = e.target.value;
-
+            rec.compagnia = target.value;
             const altroWrap = container.querySelector(`[data-copertura-altrowrap="${key}"]`);
             if (altroWrap) altroWrap.style.display = (rec.compagnia === "Altro") ? "" : "none";
-
-            // Se non è Altro, pulisco il campo (evita sporcizia dati)
             if (rec.compagnia !== "Altro") rec.compagniaAltro = "";
-        });
+        }
+        else if (target.classList.contains("coperturaV2Scadenza")) {
+            appStatePersona.user.copertureAttive[key].scadenza = target.value || "";
+        }
     });
 
-    container.querySelectorAll(".coperturaV2Altro").forEach(el => {
-        el.addEventListener("input", (e) => {
-            const key = e.target.getAttribute("data-copertura-key");
-            if (!key) return;
-            appStatePersona.user.copertureAttive[key].compagniaAltro = e.target.value || "";
-        });
+    container.addEventListener("input", (e) => {
+        const target = e.target;
+        const key = target.getAttribute("data-copertura-key");
+        if (!key) return;
+
+        if (target.classList.contains("coperturaV2Altro")) {
+            appStatePersona.user.copertureAttive[key].compagniaAltro = target.value || "";
+        }
+        else if (target.classList.contains("coperturaV2Premio")) {
+            appStatePersona.user.copertureAttive[key].premioAnnuo = target.value || "";
+        }
+        else if (target.classList.contains("coperturaV2Capitale")) {
+            appStatePersona.user.copertureAttive[key].capitaleEuro = target.value || "";
+        }
+        else if (target.classList.contains("coperturaV2Note")) {
+            appStatePersona.user.copertureAttive[key].note = target.value || "";
+        }
     });
 
     container.querySelectorAll(".coperturaV2Premio").forEach(el => {
