@@ -27,7 +27,8 @@ function verificaPassword(inputPass) {
 const appStatePersona = {
     user: {
         anagrafica: {},
-        polizze: []
+        polizze: [],
+        copertureAttive: {}  // AGGIUNTO: necessario per V2 coperture e Aladdin
     },
     questionnaire: {
         currentIndex: 0,
@@ -786,7 +787,7 @@ const cognome = (cognomeEl && typeof cognomeEl.value === "string") ? cognomeEl.v
     // Nuovi campi Aladdin
     const statoCivile = getVal("statoCivile");
     const figliMaggiorenniConviventi = getNum("figliMaggiorenniConviventi");
-
+    const anniContributiTotali = getNum("anniContributivi");
     const selectConsulente = document.getElementById("consulenteSelect");
     const emailConsulenteInput = document.getElementById("emailConsulente");
     const consulenteEmail = selectConsulente ? selectConsulente.value : "";
@@ -808,6 +809,7 @@ const cognome = (cognomeEl && typeof cognomeEl.value === "string") ? cognomeEl.v
         figliMinorenni,
         figliMaggiorenniConviventi,  // Nuovo campo Aladdin
         statoCivile,                  // Nuovo campo Aladdin
+        anniContributiTotali,         // Nuovo campo Aladdin    
         patrimonioFinanziario,
         emailCliente,
         telefonoCliente,
