@@ -6643,46 +6643,6 @@ function validaCodiceFiscale(cf) {
     return { valido: true };
 }
 
-
-/* ============================
-   ESTRAZIONE DATA DI NASCITA + SESSO
-============================ */
-
-function estraiDataNascitaDaCF(cf) {
-    cf = cf.toUpperCase();
-
-    const anno = parseInt(cf.substring(6, 8), 10);
-    const meseChar = cf.charAt(8);
-    const giornoChar = parseInt(cf.substring(9, 11), 10);
-
-    const mesi = {
-        'A': 1,'B': 2,'C': 3,'D': 4,'E': 5,'H': 6,
-        'L': 7,'M': 8,'P': 9,'R': 10,'S': 11,'T': 12
-    };
-
-    const mese = mesi[meseChar];
-
-    // Donna → giorno + 40
-    let giorno = giornoChar;
-    let sesso = "M";
-    if (giorno > 40) {
-        giorno -= 40;
-        sesso = "F";
-    }
-
-    // Anno → 1900–1999 oppure 2000–2099 (assunzione moderna)
-    const currentYear = new Date().getFullYear() % 100;
-    const secolo = anno <= currentYear ? 2000 : 1900;
-    const annoCompleto = secolo + anno;
-
-    const dataISO = `${annoCompleto}-${String(mese).padStart(2,"0")}-${String(giorno).padStart(2,"0")}`;
-
-    return {
-        data: dataISO,
-        sesso
-    };
-}
-
 function initAnagraficaPersonaHelpers() {
     const dataNascitaInput = document.getElementById("dataNascita");
     const luogoNascitaInput = document.getElementById("luogoNascita");
