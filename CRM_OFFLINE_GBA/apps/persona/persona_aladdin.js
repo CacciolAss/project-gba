@@ -168,8 +168,30 @@ class AladdinCore {
     buildClientTwin() {
         console.log("🏛️ ALADDIN: Costruzione Client Twin...");
 
-        const reddito = this.anagraficaCompleta.redditoAnnuoLordo;
-        const redditoFam = this.anagraficaCompleta.redditoFamiliareAnnuo;
+        const redditoLordo = this.anagraficaCompleta.redditoAnnuoLordo;
+const redditoFamLordo = this.anagraficaCompleta.redditoFamiliareAnnuo;
+
+// Calcolo reddito NETTO usando il modulo fiscale 2026
+const regione = this.anagraficaCompleta.provincia || 'lombardia';
+const comune = this.anagraficaCompleta.citta || 'milano';
+const categoria = this.anagraficaCompleta.situazioneLavorativa || 'dipendente_privato';
+
+let redditoNetto = redditoLordo;
+let redditoFamNetto = redditoFamLordo;
+let dettaglioFiscale = null;
+
+if (typeof FISCO_2026 !== 'undefined') {
+    const risultatoFiscale = FISCO_2026.calcolaNettoDaLordo(redditoLordo, categoria, regione, comune);
+    redditoNetto = risultatoFiscale.redditoNetto;
+    dettaglioFiscale = risultatoFiscale.dettaglio;
+    
+    // Per il reddito familiare, applico lo stesso tasso di tassazione
+    const tassazioneEffettiva = risultatoFiscale.tassazioneEffettiva / 100;
+    redditoFamNetto = redditoFamLordo * (1 - tassazioneEffettiva);
+}
+
+const reddito = redditoNetto; // Ora usa il netto
+const redditoFam = redditoFamNetto;
         const componenti = this.anagraficaCompleta.componentiNucleo;
         
         const coperturaMorte = this.portfolioAssicurativo.coperture.tcm?.capitaleDecesso || 0;
@@ -364,12 +386,13 @@ class AladdinCore {
         }
 
         if (twin.identita.situazioneLavorativa === 'autonomo' || 
-            twin.identita.situazioneLavorativa === 'imprenditore') {
-            
-            const coperturaReddito = twin.copertureAttuali.reddito.diariaMensile;
-            const redditoMensile = twin.situazioneEconomica.redditoProprio / 12;
-            
-            if (coperturaReddito < (redditoMensile * 0.5)) {
+    twin.identita.situazioneLavorativa === 'imprenditore') {
+    
+    const coperturaReddito = twin.copertureAttuali.reddito.diariaMensile;
+    // Usa il reddito NETTO mensile per il calcolo della diaria target
+    const redditoMensileNetto = twin.situazioneEconomica.redditoProprio / 12;
+    
+    if (coperturaReddito < (redditoMensileNetto * 0.5)) {
                 inferenze.push({
                     tipo: 'AUTONOMO_SENZA_PARACADUTE',
                     priorita: 'CRITICA',
@@ -380,7 +403,7 @@ class AladdinCore {
                 azioniConsigliate.push({
                     priorità: 2,
                     azione: 'PROT_REDDITO_AUTONOMO',
-                    target: `Diaria €${(redditoMensile * 0.7).toFixed(0)}/mese`,
+                    target: `Diaria €${(redditoMensileNetto * 0.7).toFixed(0)}/mese (calcolata su reddito netto)`,
                     motivazione: 'Garantire continuità reddituale in caso di infortunio/malattia',
                     prodottoConsigliato: 'Protezione Reddito Generali con diaria indicizzata'
                 });
