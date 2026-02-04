@@ -394,6 +394,10 @@ if (typeof initCopertureAttiveV2 === "function") {
     }
 }
 
+/* =========================
+   INIZIALIZZAZIONE GLOBALE
+========================= */
+window.__PERSONA_NEXT_LOCK__ = false;  // Blocco anti-double-click navigazione questionario
 
 /* =========================
    UTILITIES GENERALI
