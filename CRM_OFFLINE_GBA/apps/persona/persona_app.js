@@ -5497,6 +5497,7 @@ function renderRisultatiPersona() {
     }
     if (typeof mountDecisionGraphUI === 'function') {
         mountDecisionGraphUI();
+    }    
     const nome = anagrafica.nome || "";
     const cognome = anagrafica.cognome || "";
     const cf = anagrafica.codiceFiscale || "-";
