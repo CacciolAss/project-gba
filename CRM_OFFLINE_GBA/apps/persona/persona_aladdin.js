@@ -174,7 +174,18 @@ const redditoFamLordo = this.anagraficaCompleta.redditoFamiliareAnnuo;
 // Calcolo reddito NETTO usando il modulo fiscale 2026
 const regione = this.anagraficaCompleta.provincia || 'lombardia';
 const comune = this.anagraficaCompleta.citta || 'milano';
-const categoria = this.anagraficaCompleta.situazioneLavorativa || 'dipendente_privato';
+        
+// Mapping categorie lavorative per FISCO_2026
+const mappaCategorieFisco = {
+    'dipendente': 'dipendente_privato',
+    'dirigente': 'dipendente_privato',
+    'autonomo': 'autonomo',
+    'imprenditore': 'imprenditore',
+    'pensionato': 'pensionato',
+    'altro': 'dipendente_privato'
+};
+const categoriaRaw = this.anagraficaCompleta.situazioneLavorativa || 'dipendente';
+const categoria = mappaCategorieFisco[categoriaRaw] || 'dipendente_privato';
 
 let redditoNetto = redditoLordo;
 let redditoFamNetto = redditoFamLordo;
