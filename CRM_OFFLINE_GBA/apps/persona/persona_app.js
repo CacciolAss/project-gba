@@ -762,7 +762,6 @@ const cognome = (cognomeEl && typeof cognomeEl.value === "string") ? cognomeEl.v
     } catch (e) {
         console.warn("⚠️ Prefill luogoNascita da CF fallito:", e);
     }
-    }
        
     let eta = null;
     if (dataNascita) {
