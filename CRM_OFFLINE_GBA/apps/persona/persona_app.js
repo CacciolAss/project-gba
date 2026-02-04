@@ -5491,7 +5491,12 @@ function renderRisultatiPersona() {
     const prioritaProdotti = appStatePersona.risultati.prioritaProdotti || [];
     const sintesiOperativa = appStatePersona.risultati.sintesiOperativa || [];
     const coerenzaAvanzata = appStatePersona.risultati.coerenzaAvanzata || null;
-
+    const governance = appStatePersona.risultati?.governance;
+    if (governance && typeof renderGovernanceBannerPersona === 'function') {
+        renderGovernanceBannerPersona(governance);
+    }
+    if (typeof mountDecisionGraphUI === 'function') {
+        mountDecisionGraphUI();
     const nome = anagrafica.nome || "";
     const cognome = anagrafica.cognome || "";
     const cf = anagrafica.codiceFiscale || "-";
