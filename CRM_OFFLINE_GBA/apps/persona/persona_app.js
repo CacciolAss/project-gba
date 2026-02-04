@@ -287,7 +287,7 @@ function caricaBozzaAnalisiPersonaSeEsiste() {
         }
     
 // Ripristino Coperture Attive V2 (bozza)
-const copDraft = draft.user.copertureAttive || {};
+const copDraft = (draft.user && draft.user.copertureAttive) || {};
 if (copDraft && typeof copDraft === "object") {
     const out = {};
     for (const k of Object.keys(copDraft)) {
@@ -740,6 +740,7 @@ const cognome = (cognomeEl && typeof cognomeEl.value === "string") ? cognomeEl.v
         } catch (e) {
             console.warn("⚠️ Prefill dataNascita da CF fallito:", e);
         }
+         }
     // ✅ Auto-compilazione luogo di nascita da CF (solo se vuoto)
     try {
         if (
