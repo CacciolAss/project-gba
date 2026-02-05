@@ -5159,7 +5159,7 @@ const risultatiComplessivi = {
     // governance + decision graph
     governance,
     decisionGraph: Array.isArray(governance?.decisionGraph) ? governance.decisionGraph : [],
-        // Calcoli V2 corretti
+    // Calcoli V2 corretti
     gapMorteCalcolato,
     diariaInvaliditaCalcolata,
 };
