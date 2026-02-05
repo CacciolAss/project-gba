@@ -257,7 +257,7 @@ function calcolaGapMorte(dati) {
     return {
         anniProtezione: anniProtezione,
         targetMultiplo: targetMultiplo,
-        redditoLordo: redditoLordoEffettivo,
+        redditoLordo: redditoLordo,
         fabbisognoBase: Math.round(fabbisognoBase),
         debiti: debiti,
         patrimonioSottratto: patrimonio,
