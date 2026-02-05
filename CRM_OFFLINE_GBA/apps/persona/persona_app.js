@@ -5072,8 +5072,6 @@ function calcolaRisultatiPersona() {
     const diariaInvaliditaCalcolata = calcolaDiariaNecessaria(ana);
     
     // Aggiungi ai risultati per uso nel render
-    appStatePersona.risultati.gapMorteCalcolato = gapMorteReale;
-    appStatePersona.risultati.diariaInvaliditaCalcolata = diariaInvalidita;
     const userData = buildUserDataPersona();
     const normotipo = analizzaNormotipoPersona(userData);
     const semaforo = calcolaSemaforoPersona(userData, risposte, normotipo, gapStatale);
@@ -5160,7 +5158,7 @@ const risultatiComplessivi = {
 
     // governance + decision graph
     governance,
-    decisionGraph: Array.isArray(governance?.decisionGraph) ? governance.decisionGraph : []
+    decisionGraph: Array.isArray(governance?.decisionGraph) ? governance.decisionGraph : [],
         // Calcoli V2 corretti
     gapMorteCalcolato,
     diariaInvaliditaCalcolata,
