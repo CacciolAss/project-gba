@@ -220,11 +220,12 @@ function calcolaGapMorte(dati) {
     // 1. ANNI DI PROTEZIONE (già calcolati)
     const anniProtezione = calcolaAnniProtezione(dati);
     
-    // 2. FABBISOGNO TOTALE
-    // Se non specificato, stima spese al 80% del reddito netto (regola empirica)
-    const speseAnnue = dati.speseAnnueEssenziali || (dati.redditoNetto * 0.8) || 30000;
+       // 2. FABBISOGNO TOTALE (usando NORMATIVA INPS 2026 - target 10x reddito)
+    const normativa = typeof NORMATIVA_PERSONA_2025 !== 'undefined' ? NORMATIVA_PERSONA_2025 : null;
+    const targetMultiplo = normativa?.morte?.targetMultiploReddito || 10;
     
-    const fabbisognoBase = speseAnnue * anniProtezione;
+    // Fabbisogno base = 10 × reddito lordo (standard assicurativo)
+    const fabbisognoBase = (dati.redditoAnnuoLordo || 0) * targetMultiplo; 
     const debiti = (dati.mutuoResiduo || 0) + (dati.altriDebiti || 0);
     const patrimonio = dati.patrimonioFinanziario || 0;
     
@@ -266,24 +267,6 @@ function calcolaGapMorte(dati) {
     };
 }
 
-// TEST CHECKPOINT per Alessio Giacomelli
-// Dati test: reddito 45k, figli 12/15anni (7 anni prot), mutuo 80k, patrimonio 50k, TCM 150k scad 2030
-const testDatiGap = {
-    eta: 50,
-    redditoNetto: 32000, // Da calcolo fiscale
-    figliDettaglio: [{eta: 12}, {eta: 15}],
-    speseAnnueEssenziali: 36000, // Stima 3k/mese
-    mutuoResiduo: 80000,
-    altriDebiti: 0,
-    patrimonioFinanziario: 50000,
-    copertureAttive: [
-        {tipo: 'TCM', capitale: 150000, scadenza: '2030-12-30', attiva: true}
-    ]
-};
-// console.log('TEST GAP:', calcolaGapMorte(testDatiGap));
-// Atteso: fabbisogno ~ (36000×7)=252000 + 80000 - 50000 = 282000
-// TCM scade 2030 (4 anni) → valore 75000 (50%)
-// Gap finale: 282000 - 75000 = 207000 (NON 450000!)
 
 /* =========================
    STRUTTURA DATI ANAGRAFICA V2
