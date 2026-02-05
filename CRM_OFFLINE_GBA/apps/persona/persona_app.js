@@ -5068,9 +5068,8 @@ function calcolaRisultatiPersona() {
         ana.redditoNettoMensile = calcNetto.nettoMensile;
     }
     
-    // Calcoli corretti con le nuove funzioni
-    const gapMorteReale = calcolaGapMorte(ana);
-    const diariaInvalidita = calcolaDiariaNecessaria(ana);
+        const gapMorteCalcolato = calcolaGapMorte(ana);
+    const diariaInvaliditaCalcolata = calcolaDiariaNecessaria(ana);
     
     // Aggiungi ai risultati per uso nel render
     appStatePersona.risultati.gapMorteCalcolato = gapMorteReale;
@@ -5162,6 +5161,9 @@ const risultatiComplessivi = {
     // governance + decision graph
     governance,
     decisionGraph: Array.isArray(governance?.decisionGraph) ? governance.decisionGraph : []
+        // Calcoli V2 corretti
+    gapMorteCalcolato,
+    diariaInvaliditaCalcolata,
 };
 
 
@@ -5186,13 +5188,6 @@ appStatePersona.risultati = {
     sintesiOperativa
 };
     
-    // Aggiunta calcoli V2 corretti (gap morte reale e diaria)
-    if (typeof gapMorteReale !== 'undefined') {
-        appStatePersona.risultati.gapMorteCalcolato = gapMorteReale;
-    }
-    if (typeof diariaInvalidita !== 'undefined') {
-        appStatePersona.risultati.diariaInvaliditaCalcolata = diariaInvalidita;
-    }
     
 console.log("📊 Risultati persona (completi):", appStatePersona.risultati);
 
