@@ -132,5 +132,92 @@ const FISCO_2026 = {
     };
   }
 };
+/* =========================
+   INTEGRAZIONE V2 - DETRAZIONI FIGLI E WRAPPER PERSONA
+========================= */
+
+// Detrazioni figli a carico 2026 (valori base per reddito medio 35-55k)
+FISCO_2026.detrazioniFigli = {
+  basePerFiglio: 950, // Euro annui per figlio fino a 21 anni o studente
+  studenteUniversitario: 1200 // Se over 21 studente
+};
+
+/**
+ * Calcola detrazioni per figli a carico
+ * @param {number} numFigli - Numero figli
+ * @param {boolean} studenti - Se true, usa detrazione studente universitario (over 21)
+ * @returns {number} Detrazione totale annua
+ */
+FISCO_2026.calcolaDetrazioniFigli = function(numFigli, studenti = false) {
+  if (!numFigli || numFigli <= 0) return 0;
+  const detrazionePerFiglio = studenti ? this.detrazioniFigli.studenteUniversitario : this.detrazioniFigli.basePerFiglio;
+  // Per reddito sopra 28k, la detrazione si riduce, qui usiamo valore medio
+  return Math.round(detrazionePerFiglio * numFigli * 0.8); // 0.8 = correzione per reddito medio-alto
+};
+
+/**
+ * FUNZIONE PRINCIPALE V2 - Calcolo netto completo per sistema Persona
+ * Gestisce correttamente autonomi con stima costi e detrazioni figli
+ * 
+ * @param {number} lordo - Reddito lordo annuo
+ * @param {string} tipoLavoro - 'autonomo' | 'dipendente' | 'imprenditore'
+ * @param {string} regione - Nome regione
+ * @param {string} comune - Nome comune  
+ * @param {number} numFigli - Numero figli a carico
+ * @returns {Object} Risultato completo con netto annuo e mensile
+ */
+FISCO_2026.calcolaNettoPersona = function(lordo, tipoLavoro = 'autonomo', regione = 'toscana', comune = 'prato', numFigli = 0) {
+  // Mappatura tipo lavoro
+  const categoriaMap = {
+    'autonomo': 'autonomo',
+    'imprenditore': 'imprenditore', 
+    'dipendente': 'dipendente_privato',
+    'libero_professionista': 'autonomo'
+  };
+  
+  const categoria = categoriaMap[tipoLavoro] || 'autonomo';
+  
+  // Per autonomi: stima costi deducibili (INPS calcolato sul reddito d'impresa, non sul lordo)
+  // Approssimazione: costi = 40% per autonomi ordinari (non forfettari)
+  let redditoPerContributi = lordo;
+  let contributi = 0;
+  
+  if (categoria === 'autonomo' || categoria === 'imprenditore') {
+    // Stima reddito d'impresa (lordo - 40% costi)
+    const redditoImpresa = lordo * 0.60;
+    // Contributi INPS 25,98% sul reddito d'impresa (con minimo circa 3800, qui semplificato)
+    contributi = Math.max(3800, redditoImpresa * 0.2598);
+  } else {
+    contributi = this.calcolaContributiPrevidenza(lordo, categoria);
+  }
+  
+  // Ricalcola imponibile IRPEF (lordo - contributi)
+  const imponibile = Math.max(0, lordo - contributi);
+  
+  // Calcolo imposte
+  const irpef = this.calcolaIrpefLorda(imponibile);
+  const addReg = this.calcolaAddizionaleRegionale(imponibile, regione);
+  const addCom = this.calcolaAddizionaleComunale(imponibile, comune);
+  
+  // Detrazioni figli
+  const detrazioni = this.calcolaDetrazioniFigli(numFigli);
+  
+  // NETTO FINALE
+  const nettoAnnuo = lordo - contributi - irpef - addReg - addCom + detrazioni;
+  const nettoMensile = nettoAnnuo / 12;
+  
+  return {
+    lordo: Math.round(lordo),
+    nettoAnnuo: Math.round(nettoAnnuo),
+    nettoMensile: Math.round(nettoMensile),
+    imponibile: Math.round(imponibile),
+    contributi: Math.round(contributi),
+    irpef: irpef,
+    addizionaleRegionale: addReg,
+    addizionaleComunale: addCom,
+    detrazioniFigli: detrazioni,
+    tassazioneEffettiva: ((lordo - nettoAnnuo) / lordo * 100).toFixed(1) + '%'
+  };
+};
 
 if (typeof window !== "undefined") window.FISCO_2026 = FISCO_2026;
