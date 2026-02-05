@@ -2154,12 +2154,17 @@ if (revINPS.eligible === false) {
 // TCM ATTIVA (COPERTURE ATTIVE V2)
 // ======================
 
-// Lettura capitale TCM inserito manualmente (se presente)
+// Lettura capitale TCM inserito manualmente (se presente) - FIX DUALE
 let capitaleTCM = null;
 try {
-    const copV2 = appStatePersona?.user?.copertureAttive || {};
-    const tcm = copV2.tcm || null;
+    // Cerca sia in user.copertureAttive (allineato) sia in user.anagrafica.copertureAttive (origine)
+    const copUser = appStatePersona?.user?.copertureAttive || {};
+    const copAna = appStatePersona?.user?.anagrafica?.copertureAttive || {};
+    
+    // Priorità: user (se presente), altrimenti anagrafica
+    const tcm = copUser.tcm || copAna.tcm || null;
     const cap = tcm && tcm.capitaleEuro != null ? Number(tcm.capitaleEuro) : null;
+    
     if (isFinite(cap) && cap > 0) {
         capitaleTCM = cap;
     }
