@@ -25,10 +25,10 @@ function verificaPassword(inputPass) {
    STATE APP PERSONA
 ========================= */
 const appStatePersona = {
-    user: {
-        anagrafica: {},
+        user: {
+        anagrafica: {},      // Vedi struttura estesa sotto
         polizze: [],
-        copertureAttive: {}  // AGGIUNTO: necessario per V2 coperture e Aladdin
+        copertureAttive: []  // MODIFICATO: da {} a [] (array di oggetti copertura)
     },
     questionnaire: {
         currentIndex: 0,
@@ -115,8 +115,127 @@ function popolaFormAnagraficaDaStatePersona() {
     if (emailConsulenteInput && ana.consulenteEmailVisibile) {
         emailConsulenteInput.value = ana.consulenteEmailVisibile;
     }
+        // V2: Popola nuovi campi estesi (debiti, contributi, figli)
+    setVal("anniContributi", ana.anniContributi);
+    setVal("regione", ana.regione);
+    setVal("mutuoResiduo", ana.mutuoResiduo);
+    setVal("altriDebiti", ana.altriDebiti);
+    setVal("iseeStimato", ana.iseeStimato);
+    setVal("statoCivile", ana.statoCivile);
+    
+    // V2: Popola età figli dettagliate
+    if (ana.figliDettaglio && ana.figliDettaglio[0]) {
+        setVal("figlio1Eta", ana.figliDettaglio[0].eta);
+    }
+    if (ana.figliDettaglio && ana.figliDettaglio[1]) {
+        setVal("figlio2Eta", ana.figliDettaglio[1].eta);
+    }
 }
 
+
+/* =========================
+   FUNZIONI CORE CALCOLO V2
+========================= */
+
+/**
+ * Calcola gli anni di protezione necessari in base all'età dei figli
+ * @param {Object} anagrafica - oggetto anagrafica con figliDettaglio
+ * @returns {number} - anni di protezione necessari (minimo 2)
+ */
+function calcolaAnniProtezione(anagrafica) {
+    // Se non ci sono figli dettagliati o array vuoto
+    if (!anagrafica.figliDettaglio || anagrafica.figliDettaglio.length === 0) {
+        // Senza figli: protezione minima 5 anni o fino a pensione (67 anni)
+        const anniAllaPensione = 67 - (anagrafica.eta || 0);
+        return Math.max(2, Math.min(5, anniAllaPensione));
+    }
+    
+    // Per ogni figlio, calcola quando diventa indipendente
+    const anniPerFiglio = anagrafica.figliDettaglio.map(figlio => {
+        // Se figlio disabile: protezione fino a pensione utente
+        if (figlio.invalido) {
+            return 67 - (anagrafica.eta || 0);
+        }
+        
+        // Se già maggiorenne ma studente universitario: fino a 23 anni
+        if (figlio.eta >= 18 && figlio.studente) {
+            return Math.max(0, 23 - figlio.eta);
+        }
+        
+        // Se già maggiorenne e non studente: già indipendente
+        if (figlio.eta >= 18) {
+            return 0;
+        }
+        
+        // Minorenne: fino a 18 anni + 1 anno buffer
+        return (18 - figlio.eta) + 1;
+    });
+    
+    // Prende il massimo anni necessari tra tutti i figli
+    const maxAnni = Math.max(...anniPerFiglio);
+    
+    // Minimo 2 anni anche se tutti indipendenti (buffer coniuge)
+    return Math.max(2, maxAnni);
+}
+
+/* =========================
+   STRUTTURA DATI ANAGRAFICA V2
+   - Schema esteso per calcoli corretti gap e tute
+========================= */
+
+// Template campo anagrafica completo (riferimento per sviluppo)
+const schemaAnagraficaV2 = {
+    // Base (già esistenti)
+    nome: "",
+    cognome: "",
+    codiceFiscale: "",
+    dataNascita: "",
+    luogoNascita: "",
+    eta: 0,
+    sesso: "",
+    
+    // Lavoro (parzialmente esistenti)
+    professione: "",
+    situazioneLavorativa: "", // dipendente | autonomo | libero_professionista | parasubordinato | pensionato
+    redditoAnnuo: 0,          // Lordo
+    redditoNetto: 0,          // CALCOLATO - da persona_fisco_2026.js
+    anniContributi: 0,        // NUOVO - anni versati INPS
+    regione: "",              // NUOVO - per addizionali IRPEF (es: "Toscana")
+    
+    // Famiglia (estesi)
+    nucleoComponenti: 0,
+    numeroPercettori: 0,      // Se esistente
+    figliMinorenni: 0,        // Contatore
+    figliDettaglio: [         // NUOVO - array oggetti
+        // { eta: 12, annoMaggioreEta: 2034, invalido: false, studente: false }
+    ],
+    statoCivile: "",          // coniugato | celibe | divorziato | vedovo
+    
+    // Patrimonio e Debiti (nuova sezione)
+    patrimonioFinanziario: 0,
+    mutuoResiduo: 0,          // NUOVO
+    altriDebiti: 0,           // NUOVO - debiti professionali/personal
+    
+    // Parametri INPS/Statali (nuova sezione)
+    iseeStimato: 0,           // NUOVO - per calcolo assegno accompagnamento
+    
+    // Contatti (già esistenti)
+    citta: "",
+    provincia: "",
+    cap: "",
+    emailCliente: "",
+    telefonoCliente: ""
+};
+
+// Template copertura attiva (per array copertureAttive)
+const schemaCoperturaAttiva = {
+    tipo: "",           // 'TCM' | 'VITA' | 'INFORTUNI' | 'INVALIDITA' | 'SANITARIA'
+    compagnia: "",      // opzionale
+    capitale: 0,        // capitale assicurato
+    scadenza: "",       // YYYY-MM-DD o null se vita intera
+    premioAnnuo: 0,     // opzionale
+    attiva: true        // boolean
+};
 /**
  * Salva una bozza dell'analisi persona in localStorage.
  * Salva:
