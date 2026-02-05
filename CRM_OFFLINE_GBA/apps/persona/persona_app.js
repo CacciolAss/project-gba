@@ -268,6 +268,58 @@ function calcolaGapMorte(dati) {
     };
 }
 
+/* =========================
+   CALCOLO DIARIA INVALIDITÀ V2 (INPS 2026)
+========================= */
+
+function calcolaDiariaNecessaria(dati) {
+    const normativa = typeof NORMATIVA_PERSONA_2025 !== 'undefined' ? NORMATIVA_PERSONA_2025 : null;
+    const tipoLavoro = dati.situazioneLavorativa || 'autonomo';
+    
+    const redditoNettoMensile = dati.redditoNettoMensile || (dati.redditoNetto / 12) || 2500;
+    const redditoAnnuoNetto = redditoNettoMensile * 12;
+    
+    const limiteInvCivile = normativa?.invalidita?.baseInvaliditaCivile?.limiteReddito || 20029.55;
+    const invCivileMensile = redditoAnnuoNetto < limiteInvCivile 
+        ? (normativa?.invalidita?.baseInvaliditaCivile?.importoMensile || 340.71)
+        : 0;
+    
+    const accompagnamentoMensile = normativa?.invalidita?.assegnoAccompagnamento?.invalidiTotali?.importoMensile || 552.57;
+    
+    const coeffSost = normativa?.invalidita?.coeffSostituzioneReddito?.[tipoLavoro] || 0.30;
+    const pensioneInvaliditaMensile = (redditoAnnuoNetto * coeffSost) / 12;
+    
+    let entrateGarantite = 0;
+    const civileConAccompagnamento = invCivileMensile + (invCivileMensile > 0 ? accompagnamentoMensile : 0);
+    
+    if (civileConAccompagnamento > pensioneInvaliditaMensile) {
+        entrateGarantite = civileConAccompagnamento;
+    } else {
+        entrateGarantite = pensioneInvaliditaMensile;
+    }
+    
+    const targetQuota = normativa?.invalidita?.targetQuotaReddito || 0.70;
+    const redditoTarget = redditoNettoMensile * targetQuota;
+    
+    const gap = Math.max(0, redditoTarget - entrateGarantite);
+    
+    const diariaMinima = (tipoLavoro === 'autonomo' || tipoLavoro === 'imprenditore') ? 1200 : 800;
+    const diariaFinale = Math.max(diariaMinima, gap);
+    
+    return {
+        redditoNettoMensile: Math.round(redditoNettoMensile),
+        targetCopertura: Math.round(targetQuota * 100) + '%',
+        entrateStatali: {
+            invaliditaCivile: Math.round(invCivileMensile),
+            assegnoAccompagnamento: Math.round(accompagnamentoMensile),
+            pensioneInvalidita: Math.round(pensioneInvaliditaMensile),
+            totaleMensile: Math.round(entrateGarantite)
+        },
+        redditoTarget: Math.round(redditoTarget),
+        gapCalcolato: Math.round(gap),
+        diariaRaccomandata: Math.round(diariaFinale)
+    };
+}
 
 /* =========================
    STRUTTURA DATI ANAGRAFICA V2
