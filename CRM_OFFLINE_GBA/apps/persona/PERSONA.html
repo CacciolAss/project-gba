@@ -632,9 +632,20 @@
                     <input type="number" id="nucleoComponenti" min="1" placeholder="Es: 4" />
                 </div>
 
-                                <div>
+                                                <div>
                     <label>Figli minorenni</label>
                     <input type="number" id="figliMinorenni" min="0" placeholder="Es: 2" />
+                </div>
+
+                <!-- Età figli (visibile solo se figliMinorenni > 0) -->
+                <div id="containerEtaFigli1" style="display:none;">
+                    <label>Età primo figlio</label>
+                    <input type="number" id="figlio1Eta" min="0" max="17" placeholder="Es: 12" />
+                </div>
+
+                <div id="containerEtaFigli2" style="display:none;">
+                    <label>Età secondo figlio</label>
+                    <input type="number" id="figlio2Eta" min="0" max="17" placeholder="Es: 15" />
                 </div>
 
                 <div>
@@ -661,6 +672,18 @@
         placeholder="Es: € 150.000"
     />
 </div>
+
+
+                <!-- Debiti e Obblighi -->
+                <div>
+                    <label>Mutuo residuo da estinguere</label>
+                    <input type="text" id="mutuoResiduo" placeholder="Es: € 80.000" />
+                </div>
+
+                <div>
+                    <label>Altri debiti professionali/familiari</label>
+                    <input type="text" id="altriDebiti" placeholder="Es: € 10.000" />
+                </div>  
 
 <script>
 (function () {
@@ -1254,9 +1277,43 @@ req.onsuccess = () => {
   try { window.mountDecisionGraphUI && window.mountDecisionGraphUI(); } catch (e) {}
 </script>
 
+<!-- GESTIONE CAMPI ETÀ FIGLI -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const inputFigli = document.getElementById('figliMinorenni');
+    if (inputFigli) {
+        inputFigli.addEventListener('change', function(e) {
+            const n = parseInt(e.target.value) || 0;
+            document.getElementById('containerEtaFigli1').style.display = n >= 1 ? 'block' : 'none';
+            document.getElementById('containerEtaFigli2').style.display = n >= 2 ? 'block' : 'none';
+        });
+    }
+});
+// Formattazione automatica campi debiti
+(function () {
+  ['mutuoResiduo', 'altriDebiti'].forEach(function(id) {
+    const input = document.getElementById(id);
+    if (!input) return;
+    
+    input.addEventListener('blur', function() {
+      const raw = this.value.replace(/[^\d]/g, "");
+      if (!raw) { this.value = ""; return; }
+      const value = parseInt(raw, 10);
+      if (isNaN(value)) return;
+      this.value = "€ " + value.toLocaleString("it-IT");
+    });
+
+    input.addEventListener('focus', function() {
+      this.value = this.value.replace(/[^\d]/g, "");
+    });
+  });
+})();
+    
+</script>
 
 </body>
 </html>
+
 
 
 
