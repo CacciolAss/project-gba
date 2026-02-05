@@ -5185,7 +5185,15 @@ appStatePersona.risultati = {
     ...risultatiComplessivi,
     sintesiOperativa
 };
-
+    
+    // Aggiunta calcoli V2 corretti (gap morte reale e diaria)
+    if (typeof gapMorteReale !== 'undefined') {
+        appStatePersona.risultati.gapMorteCalcolato = gapMorteReale;
+    }
+    if (typeof diariaInvalidita !== 'undefined') {
+        appStatePersona.risultati.diariaInvaliditaCalcolata = diariaInvalidita;
+    }
+    
 console.log("📊 Risultati persona (completi):", appStatePersona.risultati);
 
 // ancora lo state sul window (anti-reset UI) + fallback robusto per DG/UI
