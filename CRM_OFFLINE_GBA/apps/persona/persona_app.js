@@ -233,23 +233,36 @@ function calcolaGapMorte(dati) {
     // Fabbisogno lordo: coprire spese per N anni + estinguere debiti - utilizzare patrimonio
     const fabbisognoTotale = Math.max(0, fabbisognoBase + debiti - patrimonio);
     
-    // 3. COPERTURE ESISTENTI (sottrattive)
-    let copertureTotali = 0;
-    const dettaglioCoperture = [];
+    // 3. COPERTURE ESISTENTI (sottrattive) - FIX V2
+let copertureTotali = 0;
+const dettaglioCoperture = [];
+
+// Le coperture V2 sono un oggetto {tcm: {...}, pac: {...}}, non un array
+const copertureObj = dati.copertureAttive || {};
+const chiaviCoperture = Object.keys(copertureObj);
+
+chiaviCoperture.forEach(key => {
+    const cop = copertureObj[key];
+    if (!cop || !cop.active) return; // Salta se non attiva
     
-    if (dati.copertureAttive && Array.isArray(dati.copertureAttive)) {
-        dati.copertureAttive.forEach(cop => {
-            const valoreEffettivo = calcolaValoreCopertura(cop);
-            copertureTotali += valoreEffettivo;
-            dettaglioCoperture.push({
-                tipo: cop.tipo,
-                capitaleNominale: cop.capitale,
-                valoreEffettivo: valoreEffettivo,
-                scadenza: cop.scadenza,
-                note: valoreEffettivo < cop.capitale ? 'Decadimento per scadenza prossima' : 'Copertura valida'
-            });
+    const valoreEffettivo = calcolaValoreCopertura({
+        tipo: key,
+        capitale: cop.capitaleEuro || cop.capitale || 0, // Supporta entrambi i nomi campo
+        scadenza: cop.scadenza,
+        attiva: true
+    });
+    
+    if (valoreEffettivo > 0) {
+        copertureTotali += valoreEffettivo;
+        dettaglioCoperture.push({
+            tipo: key.toUpperCase(),
+            capitaleNominale: cop.capitaleEuro || cop.capitale || 0,
+            valoreEffettivo: valoreEffettivo,
+            scadenza: cop.scadenza,
+            note: valoreEffettivo < (cop.capitaleEuro || cop.capitale) ? 'Decadimento per scadenza prossima' : 'Copertura valida'
         });
     }
+});
     
     // 4. GAP NETTO
     const gap = Math.max(0, fabbisognoTotale - copertureTotali);
@@ -1103,14 +1116,15 @@ const cognome = (cognomeEl && typeof cognomeEl.value === "string") ? cognomeEl.v
         cap,
         consulenteEmail,
         consulenteEmailVisibile,
-        copertureAttive: haTCM && tcmCapitale > 0 ? [
-            {
-                tipo: 'TCM',
-                capitale: tcmCapitale,
-                scadenza: tcmScadenza,
-                attiva: true
-            }
-        ] : []
+        copertureAttive: haTCM && tcmCapitale > 0 ? {
+    tcm: {
+        active: true,
+        capitaleEuro: tcmCapitale,
+        scadenza: tcmScadenza,
+        compagnia: "",
+        note: ""
+    }
+} : {}
     };
 
     // Aggiorna il contesto dinamico persona se è disponibile il costruttore
