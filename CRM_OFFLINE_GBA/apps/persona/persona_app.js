@@ -225,7 +225,8 @@ function calcolaGapMorte(dati) {
     const targetMultiplo = normativa?.morte?.targetMultiploReddito || 10;
     
     // Fabbisogno base = 10 × reddito lordo (standard assicurativo)
-    const fabbisognoBase = (dati.redditoAnnuoLordo || 0) * targetMultiplo; 
+    const redditoLordo = dati.redditoAnnuoLordo || dati.redditoAnnuo || 0;
+    const fabbisognoBase = redditoLordo * targetMultiplo;
     const debiti = (dati.mutuoResiduo || 0) + (dati.altriDebiti || 0);
     const patrimonio = dati.patrimonioFinanziario || 0;
     
@@ -256,7 +257,7 @@ function calcolaGapMorte(dati) {
     return {
         anniProtezione: anniProtezione,
         targetMultiplo: targetMultiplo,
-        redditoLordo: dati.redditoAnnuoLordo,
+        redditoLordo: redditoLordoEffettivo,
         fabbisognoBase: Math.round(fabbisognoBase),
         debiti: debiti,
         patrimonioSottratto: patrimonio,
