@@ -1126,7 +1126,10 @@ const cognome = (cognomeEl && typeof cognomeEl.value === "string") ? cognomeEl.v
     }
 } : {}
     };
-
+    
+    // ✅ ALLINEAMENTO CRITICO: copia le coperture in user per i calcoli gap
+    appStatePersona.user.copertureAttive = appStatePersona.user.anagrafica.copertureAttive;
+    
     // Aggiorna il contesto dinamico persona se è disponibile il costruttore
     if (typeof window.buildContestoPersonaFromAnagrafica === "function") {
         try {
