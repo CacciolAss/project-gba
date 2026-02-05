@@ -1044,6 +1044,16 @@ const cognome = (cognomeEl && typeof cognomeEl.value === "string") ? cognomeEl.v
     const numPercettoriReddito = getNum("numPercettoriReddito");
     const nucleoComponenti = getNum("nucleoComponenti");
     const figliMinorenni = getNum("figliMinorenni");
+        // Nuovi campi V2 per calcolo gap corretto
+    const figlio1Eta = getNum("figlio1Eta");
+    const figlio2Eta = getNum("figlio2Eta");
+    const mutuoResiduo = getNum("mutuoResiduo");
+    const altriDebiti = getNum("altriDebiti");
+    
+    // TCM esistente
+    const haTCM = document.getElementById("haTCM")?.checked || false;
+    const tcmCapitale = haTCM ? getNum("tcmCapitale") : 0;
+    const tcmScadenza = haTCM ? document.getElementById("tcmScadenza")?.value || null : null;
     const patrimonioFinanziario = getNum("patrimonioFinanziario");
     const emailCliente = getVal("emailCliente");
     const telefonoCliente = getVal("telefonoCliente");
@@ -1073,6 +1083,14 @@ const cognome = (cognomeEl && typeof cognomeEl.value === "string") ? cognomeEl.v
         numPercettoriReddito,
         nucleoComponenti,
         figliMinorenni,
+        figlio1Eta,
+        figlio2Eta,
+        figliDettaglio: [
+            figlio1Eta ? { eta: figlio1Eta, id: 1 } : null,
+            figlio2Eta ? { eta: figlio2Eta, id: 2 } : null
+        ].filter(f => f !== null),
+        mutuoResiduo,
+        altriDebiti,    
         figliMaggiorenniConviventi,  // Nuovo campo Aladdin
         statoCivile,                  // Nuovo campo Aladdin
         anniContributiTotali,         // Nuovo campo Aladdin    
@@ -1083,7 +1101,15 @@ const cognome = (cognomeEl && typeof cognomeEl.value === "string") ? cognomeEl.v
         provincia,
         cap,
         consulenteEmail,
-        consulenteEmailVisibile
+        consulenteEmailVisibile,
+        copertureAttive: haTCM && tcmCapitale > 0 ? [
+            {
+                tipo: 'TCM',
+                capitale: tcmCapitale,
+                scadenza: tcmScadenza,
+                attiva: true
+            }
+        ] : []
     };
 
     // Aggiorna il contesto dinamico persona se è disponibile il costruttore
@@ -5025,6 +5051,30 @@ function calcolaRisultatiPersona() {
 
     // 2) Gap statale, normotipo, semaforo, incongruenze, coerenza
     const gapStatale = calcolaGapStatalePersona();
+        
+    // NUOVO V2: Calcolo gap morte e diaria con dati reali INPS 2026
+    const ana = appStatePersona.user.anagrafica || {};
+    
+    // Calcola netto se non presente (serve per diaria)
+    if (!ana.redditoNetto && ana.redditoAnnuo && typeof FISCO_2026 !== 'undefined') {
+        const calcNetto = FISCO_2026.calcolaNettoPersona(
+            ana.redditoAnnuo, 
+            ana.situazioneLavorativa, 
+            'toscana', 
+            'prato', 
+            ana.figliMinorenni || 0
+        );
+        ana.redditoNetto = calcNetto.nettoAnnuo;
+        ana.redditoNettoMensile = calcNetto.nettoMensile;
+    }
+    
+    // Calcoli corretti con le nuove funzioni
+    const gapMorteReale = calcolaGapMorte(ana);
+    const diariaInvalidita = calcolaDiariaNecessaria(ana);
+    
+    // Aggiungi ai risultati per uso nel render
+    appStatePersona.risultati.gapMorteCalcolato = gapMorteReale;
+    appStatePersona.risultati.diariaInvaliditaCalcolata = diariaInvalidita;
     const userData = buildUserDataPersona();
     const normotipo = analizzaNormotipoPersona(userData);
     const semaforo = calcolaSemaforoPersona(userData, risposte, normotipo, gapStatale);
