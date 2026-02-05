@@ -179,6 +179,113 @@ function calcolaAnniProtezione(anagrafica) {
 }
 
 /* =========================
+   CALCOLO GAP MORTE V2
+   - Logica corretta sottrazione coperture esistenti
+========================= */
+
+/**
+ * Calcola il valore attuale di una copertura considerando la scadenza
+ * Regola: 
+ * - Scadenza < 1 anno: valore 0 (in scadenza)
+ * - Scadenza 1-5 anni: valore 50% (rischio rinnovo)
+ * - Scadenza > 5 anni: valore 100%
+ * @param {Object} copertura - {capitale, scadenza}
+ * @param {string} dataRiferimento - formato YYYY-MM-DD (default: oggi)
+ * @returns {number} Valore effettivo sottraribile
+ */
+function calcolaValoreCopertura(copertura, dataRiferimento = new Date().toISOString().split('T')[0]) {
+    if (!copertura || !copertura.capitale || copertura.capitale <= 0) return 0;
+    if (!copertura.attiva) return 0;
+    
+    // Se scadenza è null/undefined/vita intera → valore pieno
+    if (!copertura.scadenza) return copertura.capitale;
+    
+    const oggi = new Date(dataRiferimento);
+    const scadenza = new Date(copertura.scadenza);
+    const diffAnni = (scadenza - oggi) / (1000 * 60 * 60 * 24 * 365.25);
+    
+    if (diffAnni < 1) return 0;      // Scade entro 1 anno → non contare
+    if (diffAnni <= 5) return copertura.capitale * 0.5;  // Tra 1 e 5 anni → 50%
+    return copertura.capitale;       // Oltre 5 anni → 100%
+}
+
+/**
+ * Calcola il Gap Morte corretto
+ * Formula: (SpeseAnnue × AnniProtezione + Debiti - PatrimonioLiquido) - CopertureEsistentiValide
+ * 
+ * @param {Object} dati - Oggetto anagrafica completo
+ * @returns {Object} Dettaglio gap e fabbisogno
+ */
+function calcolaGapMorte(dati) {
+    // 1. ANNI DI PROTEZIONE (già calcolati)
+    const anniProtezione = calcolaAnniProtezione(dati);
+    
+    // 2. FABBISOGNO TOTALE
+    // Se non specificato, stima spese al 80% del reddito netto (regola empirica)
+    const speseAnnue = dati.speseAnnueEssenziali || (dati.redditoNetto * 0.8) || 30000;
+    
+    const fabbisognoBase = speseAnnue * anniProtezione;
+    const debiti = (dati.mutuoResiduo || 0) + (dati.altriDebiti || 0);
+    const patrimonio = dati.patrimonioFinanziario || 0;
+    
+    // Fabbisogno lordo: coprire spese per N anni + estinguere debiti - utilizzare patrimonio
+    const fabbisognoTotale = Math.max(0, fabbisognoBase + debiti - patrimonio);
+    
+    // 3. COPERTURE ESISTENTI (sottrattive)
+    let copertureTotali = 0;
+    const dettaglioCoperture = [];
+    
+    if (dati.copertureAttive && Array.isArray(dati.copertureAttive)) {
+        dati.copertureAttive.forEach(cop => {
+            const valoreEffettivo = calcolaValoreCopertura(cop);
+            copertureTotali += valoreEffettivo;
+            dettaglioCoperture.push({
+                tipo: cop.tipo,
+                capitaleNominale: cop.capitale,
+                valoreEffettivo: valoreEffettivo,
+                scadenza: cop.scadenza,
+                note: valoreEffettivo < cop.capitale ? 'Decadimento per scadenza prossima' : 'Copertura valida'
+            });
+        });
+    }
+    
+    // 4. GAP NETTO
+    const gap = Math.max(0, fabbisognoTotale - copertureTotali);
+    
+    return {
+        anniProtezione: anniProtezione,
+        speseAnnue: speseAnnue,
+        fabbisognoBase: Math.round(fabbisognoBase),
+        debiti: debiti,
+        patrimonioSottratto: patrimonio,
+        fabbisognoTotale: Math.round(fabbisognoTotale),
+        copertureEsistenti: Math.round(copertureTotali),
+        dettaglioCoperture: dettaglioCoperture,
+        gapMorte: Math.round(gap),
+        percentualeCoperta: fabbisognoTotale > 0 ? Math.round((copertureTotali / fabbisognoTotale) * 100) : 0
+    };
+}
+
+// TEST CHECKPOINT per Alessio Giacomelli
+// Dati test: reddito 45k, figli 12/15anni (7 anni prot), mutuo 80k, patrimonio 50k, TCM 150k scad 2030
+const testDatiGap = {
+    eta: 50,
+    redditoNetto: 32000, // Da calcolo fiscale
+    figliDettaglio: [{eta: 12}, {eta: 15}],
+    speseAnnueEssenziali: 36000, // Stima 3k/mese
+    mutuoResiduo: 80000,
+    altriDebiti: 0,
+    patrimonioFinanziario: 50000,
+    copertureAttive: [
+        {tipo: 'TCM', capitale: 150000, scadenza: '2030-12-30', attiva: true}
+    ]
+};
+// console.log('TEST GAP:', calcolaGapMorte(testDatiGap));
+// Atteso: fabbisogno ~ (36000×7)=252000 + 80000 - 50000 = 282000
+// TCM scade 2030 (4 anni) → valore 75000 (50%)
+// Gap finale: 282000 - 75000 = 207000 (NON 450000!)
+
+/* =========================
    STRUTTURA DATI ANAGRAFICA V2
    - Schema esteso per calcoli corretti gap e tute
 ========================= */
