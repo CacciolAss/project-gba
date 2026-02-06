@@ -5044,10 +5044,66 @@ function salvaAnalisiPersonaInArchivio() {
 }
 
 
+/**
+ * Legge le coperture dalla sezione V2 e le salva in appStatePersona
+ * Da chiamare prima di calcolaRisultatiPersona
+ */
+function leggiCopertureAttiveV2() {
+    const container = document.getElementById('copertureAttiveV2Container');
+    if (!container) return;
+    
+    const coperture = {};
+    
+    // Cerca tutti i toggle attivi nella sezione coperture
+    const toggles = container.querySelectorAll('.copertura-toggle:checked, input[type="checkbox"][data-copertura]:checked');
+    
+    toggles.forEach(toggle => {
+        const tipo = toggle.dataset.copertura || toggle.id.replace('check', '').toLowerCase();
+        const card = toggle.closest('.copertura-v2-card') || toggle.closest('div');
+        
+        if (!card) return;
+        
+        // Cerca input capitale e scadenza nella stessa card
+        const inputCapitale = card.querySelector('input[data-field="capitale"], input[placeholder*="€"], input[id*="Capitale"]');
+        const inputScadenza = card.querySelector('input[type="date"], input[data-field="scadenza"]');
+        
+        let capitale = 0;
+        if (inputCapitale && inputCapitale.value) {
+            // Parsing robusto: rimuove €, punti, spazi
+            const valorePulito = inputCapitale.value.replace(/[€\s\.]/g, '').replace(',', '.');
+            capitale = parseFloat(valorePulito) || 0;
+        }
+        
+        let scadenza = null;
+        if (inputScadenza && inputScadenza.value) {
+            scadenza = inputScadenza.value; // Formato YYYY-MM-DD
+        }
+        
+        if (capitale > 0) {
+            coperture[tipo] = {
+                active: true,
+                capitale: capitale,
+                capitaleEuro: capitale, // per compatibilità
+                scadenza: scadenza,
+                note: tipo === 'tcm' ? 'TCM da sezione coperture attive' : ''
+            };
+            
+            console.log(`✅ Copertura ${tipo} trovata:`, coperture[tipo]);
+        }
+    });
+    
+    // Salva nello stato globale
+    appStatePersona.copertureAttive = coperture;
+    
+    console.log("💾 Coperture Attive V2 lette e salvate:", coperture);
+    return coperture;
+}
+
 /* =========================
    CALCOLO RISULTATI PERSONA
 ========================= */
 function calcolaRisultatiPersona() {
+    leggiCopertureAttiveV2();
     const domande = getDomandePersona();
     const risposte = appStatePersona.questionnaire.answers || {};
 
