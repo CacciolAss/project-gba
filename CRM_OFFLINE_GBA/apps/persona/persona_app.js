@@ -5083,10 +5083,14 @@ function leggiCopertureAttiveV2() {
             const inputCapitale = card.querySelector(`.coperturaV2Capitale`);
             const inputNote = card.querySelector(`.coperturaV2Note`);
             
-            // Parsing robusto del capitale (se esiste questo campo)
             let capitale = 0;
             if (inputCapitale && inputCapitale.value) {
-                capitale = parseFloat(inputCapitale.value) || 0;
+                // Parsing robusto: rimuove punti migliaia e €, converte virgola in punto
+                const valorePulito = inputCapitale.value.toString()
+                    .replace(/[€\s]/g, '')      // toglie € e spazi
+                    .replace(/\./g, '')          // toglie punti migliaia
+                    .replace(/,/g, '.');         // converte virgola decimale in punto
+                capitale = parseFloat(valorePulito) || 0;
             }
             
             // Parsing premio (gestisce sia numero che stringa)
