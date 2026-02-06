@@ -217,66 +217,84 @@ function calcolaValoreCopertura(copertura, dataRiferimento = new Date().toISOStr
  * @returns {Object} Dettaglio gap e fabbisogno
  */
 function calcolaGapMorte(dati) {
-    // 1. ANNI DI PROTEZIONE (già calcolati)
+    console.log("🔍 calcolaGapMorte - Input dati:", {
+        reddito: dati.redditoAnnuoLordo || dati.redditoAnnuo,
+        copertureAttive: dati.copertureAttive
+    });
+    
+    // 1. ANNI DI PROTEZIONE
     const anniProtezione = calcolaAnniProtezione(dati);
     
-       // 2. FABBISOGNO TOTALE (usando NORMATIVA INPS 2026 - target 10x reddito)
+    // 2. FABBISOGNO TOTALE
     const normativa = typeof NORMATIVA_PERSONA_2025 !== 'undefined' ? NORMATIVA_PERSONA_2025 : null;
     const targetMultiplo = normativa?.morte?.targetMultiploReddito || 10;
     
-    // Fabbisogno base = 10 × reddito lordo (standard assicurativo)
     const redditoLordo = dati.redditoAnnuoLordo || dati.redditoAnnuo || 0;
     const fabbisognoBase = redditoLordo * targetMultiplo;
     const debiti = (dati.mutuoResiduo || 0) + (dati.altriDebiti || 0);
     const patrimonio = dati.patrimonioFinanziario || 0;
     
-    // Fabbisogno lordo: coprire spese per N anni + estinguere debiti - utilizzare patrimonio
     const fabbisognoTotale = Math.max(0, fabbisognoBase + debiti - patrimonio);
     
-    // 3. COPERTURE ESISTENTI (sottrattive) - FIX V2
-let copertureTotali = 0;
-const dettaglioCoperture = [];
-
-// Le coperture V2 sono un oggetto {tcm: {...}, pac: {...}}, non un array
-const copertureObj = dati.copertureAttive || {};
-const chiaviCoperture = Object.keys(copertureObj);
-
-chiaviCoperture.forEach(key => {
-    const cop = copertureObj[key];
-    if (!cop || !cop.active) return; // Salta se non attiva
+    // 3. COPERTURE ESISTENTI - FIX ROBUSTO
+    let copertureTotali = 0;
+    const dettaglioCoperture = [];
     
-    const valoreEffettivo = calcolaValoreCopertura({
-        tipo: key,
-        capitale: cop.capitaleEuro || cop.capitale || 0, // Supporta entrambi i nomi campo
-        scadenza: cop.scadenza,
-        attiva: true
-    });
+    // Leggi coperture (oggetto V2)
+    const copertureObj = dati.copertureAttive || {};
+    console.log("🔍 CopertureObj:", copertureObj);
     
-    if (valoreEffettivo > 0) {
-        copertureTotali += valoreEffettivo;
-        dettaglioCoperture.push({
-            tipo: key.toUpperCase(),
-            capitaleNominale: cop.capitaleEuro || cop.capitale || 0,
-            valoreEffettivo: valoreEffettivo,
+    Object.keys(copertureObj).forEach(key => {
+        const cop = copertureObj[key];
+        if (!cop || !cop.active) return;
+        
+        const capitaleNominale = parseFloat(cop.capitaleEuro || cop.capitale || 0);
+        if (capitaleNominale <= 0) return;
+        
+        const valoreEffettivo = calcolaValoreCopertura({
+            tipo: key,
+            capitale: capitaleNominale,
             scadenza: cop.scadenza,
-            note: valoreEffettivo < (cop.capitaleEuro || cop.capitale) ? 'Decadimento per scadenza prossima' : 'Copertura valida'
+            attiva: true
         });
-    }
-});
+        
+        // Riconosci se TCM è collegata a mutuo (dal campo note)
+        const isTCMMutuo = (key === 'tcm' && cop.note && 
+                           cop.note.toLowerCase().includes('mutuo'));
+        
+        if (valoreEffettivo > 0) {
+            copertureTotali += valoreEffettivo;
+            dettaglioCoperture.push({
+                tipo: key.toUpperCase(),
+                capitaleNominale: capitaleNominale,
+                valoreEffettivo: valoreEffettivo,
+                scadenza: cop.scadenza,
+                isTCMMutuo: isTCMMutuo,
+                note: isTCMMutuo ? 'TCM collegata a mutuo ipotecario' : 
+                      (valoreEffettivo < capitaleNominale ? 'Decadimento per scadenza prossima' : 'Copertura valida')
+            });
+        }
+    });
     
     // 4. GAP NETTO
     const gap = Math.max(0, fabbisognoTotale - copertureTotali);
     
+    console.log("✅ calcolaGapMorte - Risultato:", {
+        fabbisogno: fabbisognoTotale,
+        coperture: copertureTotali,
+        gap: gap
+    });
+    
     return {
-        anniProtezione: anniProtezione,
-        targetMultiplo: targetMultiplo,
-        redditoLordo: redditoLordo,
+        anniProtezione,
+        targetMultiplo,
+        redditoLordo,
         fabbisognoBase: Math.round(fabbisognoBase),
-        debiti: debiti,
+        debiti,
         patrimonioSottratto: patrimonio,
         fabbisognoTotale: Math.round(fabbisognoTotale),
         copertureEsistenti: Math.round(copertureTotali),
-        dettaglioCoperture: dettaglioCoperture,
+        dettaglioCoperture,
         gapMorte: Math.round(gap),
         percentualeCoperta: fabbisognoTotale > 0 ? Math.round((copertureTotali / fabbisognoTotale) * 100) : 0
     };
@@ -5080,19 +5098,65 @@ function calcolaRisultatiPersona() {
     
     // Calcola netto se non presente (serve per diaria)
     if (!ana.redditoNetto && ana.redditoAnnuo && typeof FISCO_2026 !== 'undefined') {
-        const calcNetto = FISCO_2026.calcolaNettoPersona(
-            ana.redditoAnnuo, 
-            ana.situazioneLavorativa, 
-            'toscana', 
-            'prato', 
-            ana.figliMinorenni || 0
-        );
+        // Mapping Provincia → Regione (essenziale per aliquote regionali)
+function getRegioneDaProvincia(sigla) {
+    const map = {
+        'RM': 'lazio', 'LT': 'lazio', 'FR': 'lazio', 'VT': 'lazio',
+        'MI': 'lombardia', 'MB': 'lombardia', 'BG': 'lombardia', 'BS': 'lombardia', 'CO': 'lombardia', 'CR': 'lombardia', 'LC': 'lombardia', 'LO': 'lombardia', 'MN': 'lombardia', 'PV': 'lombardia', 'SO': 'lombardia', 'VA': 'lombardia',
+        'TO': 'piemonte', 'AL': 'piemonte', 'AT': 'piemonte', 'BI': 'piemonte', 'CN': 'piemonte', 'NO': 'piemonte', 'VC': 'piemonte',
+        'FI': 'toscana', 'PO': 'toscana', 'PT': 'toscana', 'PI': 'toscana', 'LI': 'toscana', 'AR': 'toscana', 'GR': 'toscana', 'MS': 'toscana', 'SI': 'toscana',
+        'NA': 'campania', 'CE': 'campania', 'BN': 'campania', 'AV': 'campania', 'SA': 'campania',
+        'BA': 'puglia', 'BT': 'puglia', 'FG': 'puglia', 'BR': 'puglia', 'LE': 'puglia', 'TA': 'puglia',
+        'PA': 'sicilia', 'AG': 'sicilia', 'CL': 'sicilia', 'CT': 'sicilia', 'EN': 'sicilia', 'ME': 'sicilia', 'RG': 'sicilia', 'SR': 'sicilia', 'TP': 'sicilia',
+        'CA': 'sardegna', 'CI': 'sardegna', 'VS': 'sardegna', 'NU': 'sardegna', 'OG': 'sardegna', 'OT': 'sardegna', 'OR': 'sardegnia', 'SS': 'sardegna', 'SU': 'sardegna',
+        'BO': 'emilia-romagna', 'FC': 'emilia-romagna', 'FE': 'emilia-romagna', 'MO': 'emilia-romagna', 'PR': 'emilia-romagna', 'PC': 'emilia-romagna', 'RA': 'emilia-romagna', 'RE': 'emilia-romagna', 'RN': 'emilia-romagna',
+        'GE': 'liguria', 'IM': 'liguria', 'SP': 'liguria', 'SV': 'liguria',
+        'VE': 'veneto', 'BL': 'veneto', 'PD': 'veneto', 'RO': 'veneto', 'TV': 'veneto', 'VR': 'veneto', 'VI': 'veneto',
+        'BZ': 'trentino-alto-adige', 'TN': 'trentino-alto-adige',
+        'UD': 'friuli-venezia-giulia', 'GO': 'friuli-venezia-giulia', 'PN': 'friuli-venezia-giulia', 'TS': 'friuli-venezia-giulia'
+    };
+    return map[sigla?.toUpperCase()] || 'toscana'; // Fallback sicuro
+}
+
+// Recupera dati geografici reali
+const provincia = ana.provincia || '';
+const citta = ana.citta || ana.citta || '';
+const regione = ana.regione || getRegioneDaProvincia(provincia);
+
+const calcNetto = FISCO_2026.calcolaNettoPersona(
+    ana.redditoAnnuo, 
+    ana.situazioneLavorativa, 
+    regione, 
+    citta, 
+    ana.figliMinorenni || 0
+);
+
+// Salva anche la regione derivata per uso futuro
+ana.regioneCalcolata = regione;
         ana.redditoNetto = calcNetto.nettoAnnuo;
         ana.redditoNettoMensile = calcNetto.nettoMensile;
     }
     
-        const gapMorteCalcolato = calcolaGapMorte(ana);
+    const gapMorteCalcolato = calcolaGapMorte(ana);
     const diariaInvaliditaCalcolata = calcolaDiariaNecessaria(ana);
+
+    // ✅ FIX FASE 1: Integrazione Gap Morte corretto con TCM in gapStatale
+if (gapMorteCalcolato && gapStatale && gapStatale.morte) {
+    // Sovrascrivi i valori del gap statale con quelli corretti che includono la TCM
+    gapStatale.morte.adeguato = gapMorteCalcolato.fabbisognoTotale;
+    gapStatale.morte.gap = gapMorteCalcolato.gapMorte;
+    gapStatale.morte.coperturaPrivata = gapMorteCalcolato.copertureEsistenti;
+    gapStatale.morte.coperturaTotale = (gapStatale.morte.statale || 0) + gapMorteCalcolato.copertureEsistenti;
+    gapStatale.morte.stato = gapMorteCalcolato.gapMorte > 0 ? "INADEGUATO" : "ADEGUATO";
+    gapStatale.morte.dettaglioCopertureV2 = gapMorteCalcolato.dettaglioCoperture;
+    
+    console.log("✅ FIX TCM applicato:", {
+        fabbisogno: gapMorteCalcolato.fabbisognoTotale,
+        copertureTCM: gapMorteCalcolato.copertureEsistenti,
+        gapResiduo: gapMorteCalcolato.gapMorte,
+        anniProtezione: gapMorteCalcolato.anniProtezione
+    });
+}
     
     // Aggiungi ai risultati per uso nel render
     const userData = buildUserDataPersona();
