@@ -685,26 +685,7 @@
                     <input type="text" id="altriDebiti" placeholder="Es: € 10.000" />
                 </div>  
 
- 
-                <!-- POLIZZA TCM ESISTENTE -->
-                <div>
-                    <label>
-                        <input type="checkbox" id="haTCM" style="width:auto; display:inline-block; margin-right:8px;" />
-                        Ho già una polizza Vita/TCM
-                    </label>
-                </div>
-
-                <div id="containerTCMDettagli" style="display:none;">
-                    <div>
-                        <label>Capitale assicurato TCM</label>
-                        <input type="text" id="tcmCapitale" placeholder="Es: € 150.000" />
-                    </div>
-                    
-                    <div>
-                        <label>Data scadenza polizza</label>
-                        <input type="date" id="tcmScadenza" placeholder="Es: 2030-12-30" />
-                    </div>
-                </div>       
+      
 <script>
 (function () {
   const input = document.getElementById("patrimonioFinanziario");
@@ -1329,33 +1310,12 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 })();
 
-// Gestione visibilità campi TCM
-const checkboxTCM = document.getElementById('haTCM');
-if (checkboxTCM) {
-    checkboxTCM.addEventListener('change', function(e) {
-        document.getElementById('containerTCMDettagli').style.display = e.target.checked ? 'block' : 'none';
-    });
-}
-
-// Formattazione TCM capitale
-const inputTCM = document.getElementById('tcmCapitale');
-if (inputTCM) {
-    inputTCM.addEventListener('blur', function() {
-        const raw = this.value.replace(/[^\d]/g, "");
-        if (!raw) { this.value = ""; return; }
-        const value = parseInt(raw, 10);
-        if (isNaN(value)) return;
-        this.value = "€ " + value.toLocaleString("it-IT");
-    });
-    inputTCM.addEventListener('focus', function() {
-        this.value = this.value.replace(/[^\d]/g, "");
-    });
-}    
     
 </script>
 
 </body>
 </html>
+
 
 
 
