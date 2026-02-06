@@ -5216,9 +5216,50 @@ function calcolaRisultatiPersona() {
         ana.regioneCalcolata = regione;
     }
     
-    // FIX LETTURA COPERTURE - Dalla sezione dedicata V2
-    const copertureVere = appStatePersona.copertureAttive || {};
-    console.log("🔍 Debug Coperture Vere:", copertureVere);
+        // ======================================================
+    // FIX LETTURA COPERTURE - Da appState O direttamente da DOM
+    // ======================================================
+    let copertureVere = appStatePersona.copertureAttive || {};
+    let tcmLettaDalDOM = 0;
+    
+    // Se appState è vuoto, leggi direttamente dai campi input
+    if (!copertureVere || Object.keys(copertureVere).length === 0) {
+        const container = document.getElementById('copertureAttiveV2Container');
+        if (container) {
+            // Cerca tutti gli input numerici/text nella sezione
+            const inputs = container.querySelectorAll('input[type="text"], input[type="number"], input[type="hidden"]');
+            
+            inputs.forEach(input => {
+                const valorePulito = input.value.replace(/[€\s\.]/g, '').replace(',', '.');
+                const numero = parseFloat(valorePulito);
+                
+                // Se è un numero grande (>10.000), probabilmente è un capitale assicurativo
+                if (numero > 10000) {
+                    // Determina il tipo dal contesto (label, id, o placeholder)
+                    const testoContesto = (input.id + ' ' + input.placeholder + ' ' + input.closest('div')?.textContent).toLowerCase();
+                    
+                    if (testoContesto.includes('tcm') || testoContesto.includes('vita') || testoContesto.includes('morte')) {
+                        tcmLettaDalDOM = numero;
+                        console.log("🎯 TCM trovata nel DOM:", numero);
+                    }
+                }
+            });
+            
+            // Se abbiamo trovato una TCM, costruisci l'oggetto coperture
+            if (tcmLettaDalDOM > 0) {
+                copertureVere = {
+                    tcm: {
+                        active: true,
+                        capitale: tcmLettaDalDOM,
+                        capitaleEuro: tcmLettaDalDOM,
+                        note: "Letta da campo input Coperture Attive"
+                    }
+                };
+            }
+        }
+    }
+    
+    console.log("🔍 Debug Coperture Finali:", copertureVere);
     
     // Passa dati anagrafica + coperture dalla sezione corretta
     const datiGap = {
@@ -5230,32 +5271,39 @@ function calcolaRisultatiPersona() {
     const gapMorteCalcolato = calcolaGapMorte(datiGap);
     const diariaInvaliditaCalcolata = calcolaDiariaNecessaria(ana);
     
-    // ✅ FIX FASE 1 COMPLETO - Integrazione forzata corretta in gapStatale
+        // ✅ FIX FASE 1 COMPLETO - Integrazione forzata corretta in gapStatale
     if (gapStatale && gapStatale.morte && gapMorteCalcolato) {
-        // 1. Forza calcolo copertura INPS se mancante (4.83x reddito lordo)
+        // 1. Forza calcolo copertura INPS se mancante
         let coperturaStatale = gapStatale.morte.statale;
         if (!coperturaStatale || coperturaStatale === 0) {
-            coperturaStatale = Math.round(redditoLordoNum * 4.83); // Stima INPS 2026
-            console.log("⚠️ Copertura statale mancante, calcolata fallback:", coperturaStatale);
+            coperturaStatale = Math.round(redditoLordoNum * 4.83);
         }
         
-        // 2. Aggiorna oggetto gapStatale.morte con valori corretti
-        gapStatale.morte.adeguato = gapMorteCalcolato.fabbisognoTotale || (redditoLordoNum * 10);
-        gapStatale.morte.statale = coperturaStatale;
-        gapStatale.morte.coperturaPrivata = gapMorteCalcolato.copertureEsistenti || 0;
-        gapStatale.morte.coperturaTotale = coperturaStatale + (gapMorteCalcolato.copertureEsistenti || 0);
+        // 2. Determina copertura privata (da calcolo o da lettura DOM se calcolo fallito)
+        let coperturaPrivata = gapMorteCalcolato.copertureEsistenti || 0;
         
-        // 3. Calcolo gap finale: Adeguato - Statale - Privata (TCM)
-        const gapCalcolato = Math.max(0, gapStatale.morte.adeguato - coperturaStatale - (gapMorteCalcolato.copertureEsistenti || 0));
+        // FIX EMERGENZA: se calcolaGapMorte non ha trovato la TCM ma noi sì dal DOM
+        if (coperturaPrivata === 0 && tcmLettaDalDOM > 0) {
+            coperturaPrivata = tcmLettaDalDOM;
+            console.log("🚨 Forzatura TCM dal DOM:", tcmLettaDalDOM);
+        }
+        
+        // 3. Aggiorna oggetto gapStatale.morte
+        gapStatale.morte.adeguato = gapMorteCalcolato.fabbisognoTotale || (redditoLordoNum * 10) + (parseReddito(ana.mutuoResiduo) || 0);
+        gapStatale.morte.statale = coperturaStatale;
+        gapStatale.morte.coperturaPrivata = coperturaPrivata;
+        gapStatale.morte.coperturaTotale = coperturaStatale + coperturaPrivata;
+        
+        // 4. Calcolo gap finale
+        const gapCalcolato = Math.max(0, gapStatale.morte.adeguato - coperturaStatale - coperturaPrivata);
         gapStatale.morte.gap = gapCalcolato;
         gapStatale.morte.stato = gapCalcolato > 0 ? "INADEGUATO" : "ADEGUATO";
         
         console.log("✅ FIX TCM COMPLETATO:", {
-            redditoLordo: redditoLordoNum,
             fabbisogno: gapStatale.morte.adeguato,
-            coperturaINPS: coperturaStatale,
-            coperturaPrivataTCM: gapStatale.morte.coperturaPrivata,
-            gapResiduo: gapStatale.morte.gap
+            inps: coperturaStatale,
+            tcm: coperturaPrivata,
+            gapResiduo: gapCalcolato
         });
     }
     
