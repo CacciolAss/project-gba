@@ -5137,7 +5137,24 @@ ana.regioneCalcolata = regione;
         ana.redditoNettoMensile = calcNetto.nettoMensile;
     }
     
-    const gapMorteCalcolato = calcolaGapMorte(ana);
+    // ======================================================
+// FIX LETTURA COPERTURE - Dalla sezione dedicata, non da anagrafica
+// ======================================================
+const copertureVere = appStatePersona.copertureAttive || {};
+
+// Passa dati anagrafica + coperture dalla sezione corretta
+const datiGap = {
+    ...ana,
+    copertureAttive: copertureVere
+};
+
+const gapMorteCalcolato = calcolaGapMorte(datiGap);
+
+console.log("🔍 Debug Coperture:", {
+    origine: "appStatePersona.copertureAttive",
+    copertureTrovate: copertureVere,
+    tcmPresente: copertureVere.tcm ? "SÌ" : "NO"
+});
     const diariaInvaliditaCalcolata = calcolaDiariaNecessaria(ana);
 
     // ✅ FIX FASE 1: Integrazione Gap Morte corretto con TCM in gapStatale
