@@ -5128,12 +5128,6 @@ function leggiCopertureAttiveV2() {
 }
     
     
-    // Salva nello stato globale (opzionale, già salvato in user.copertureAttive)
-appStatePersona.copertureAttive = appStatePersona.user.copertureAttive;
-
-console.log("💾 Coperture Attive V2 lette e salvate:", appStatePersona.user.copertureAttive);
-return appStatePersona.user.copertureAttive;
-}
 
 /* =========================
    CALCOLO RISULTATI PERSONA
