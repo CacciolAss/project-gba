@@ -5045,51 +5045,85 @@ function salvaAnalisiPersonaInArchivio() {
 
 
 /**
- * Legge le coperture dalla sezione V2 e le salva in appStatePersona
+ * Legge le coperture dalla sezione V2 e le salva in appStatePersona.user.copertureAttive
  * Da chiamare prima di calcolaRisultatiPersona
  */
 function leggiCopertureAttiveV2() {
     const container = document.getElementById('copertureAttiveV2Container');
-    if (!container) return;
+    if (!container) {
+        console.warn("❌ Container copertureAttiveV2Container non trovato");
+        return;
+    }
     
-    const coperture = {};
+    // Inizializza l'oggetto coperture nello stato corretto (dentro user)
+    if (!appStatePersona.user) appStatePersona.user = {};
+    if (!appStatePersona.user.copertureAttive || typeof appStatePersona.user.copertureAttive !== 'object') {
+        appStatePersona.user.copertureAttive = {};
+    }
     
-    // Cerca tutti i toggle attivi nella sezione coperture
-    const toggles = container.querySelectorAll('.copertura-toggle:checked, input[type="checkbox"][data-copertura]:checked');
-    
-    toggles.forEach(toggle => {
-        const tipo = toggle.dataset.copertura || toggle.id.replace('check', '').toLowerCase();
-        const card = toggle.closest('.copertura-v2-card') || toggle.closest('div');
+    // Itera su tutte le coperture del catalogo per leggere i valori attuali
+    for (const item of COPERTURE_ATTIVE_CATALOG) {
+        const key = item.key;
         
-        if (!card) return;
+        // Trova la checkbox corrispondente (classe coperturaV2Check + attributo data-copertura-key)
+        const checkbox = container.querySelector(`.coperturaV2Check[data-copertura-key="${key}"]`);
+        if (!checkbox) continue;
         
-        // Cerca input capitale e scadenza nella stessa card
-        const inputCapitale = card.querySelector('input[data-field="capitale"], input[placeholder*="€"], input[id*="Capitale"]');
-        const inputScadenza = card.querySelector('input[type="date"], input[data-field="scadenza"]');
-        
-        let capitale = 0;
-        if (inputCapitale && inputCapitale.value) {
-            // Parsing robusto: rimuove €, punti, spazi
-            const valorePulito = inputCapitale.value.replace(/[€\s\.]/g, '').replace(',', '.');
-            capitale = parseFloat(valorePulito) || 0;
-        }
-        
-        let scadenza = null;
-        if (inputScadenza && inputScadenza.value) {
-            scadenza = inputScadenza.value; // Formato YYYY-MM-DD
-        }
-        
-        if (capitale > 0) {
-            coperture[tipo] = {
+        // Se la copertura è attiva (checkbox spuntata), leggi tutti i campi
+        if (checkbox.checked) {
+            // Trova la card contenitore
+            const card = checkbox.closest('.copertura-v2-card');
+            if (!card) continue;
+            
+            // Leggi i valori usando le CLASSI CORRETTE che hai usato in renderCopertureAttiveV2()
+            const inputCompagnia = card.querySelector(`.coperturaV2Compagnia`);
+            const inputAltro = card.querySelector(`.coperturaV2Altro`);
+            const inputPremio = card.querySelector(`.coperturaV2Premio`);
+            const inputScadenza = card.querySelector(`.coperturaV2Scadenza`);
+            const inputCapitale = card.querySelector(`.coperturaV2Capitale`);
+            const inputNote = card.querySelector(`.coperturaV2Note`);
+            
+            // Parsing robusto del capitale (se esiste questo campo)
+            let capitale = 0;
+            if (inputCapitale && inputCapitale.value) {
+                capitale = parseFloat(inputCapitale.value) || 0;
+            }
+            
+            // Parsing premio (gestisce sia numero che stringa)
+            let premio = '';
+            if (inputPremio && inputPremio.value) {
+                premio = inputPremio.value;
+            }
+            
+            // Salva nello stato GLOBALE corretto
+            appStatePersona.user.copertureAttive[key] = {
                 active: true,
-                capitale: capitale,
-                capitaleEuro: capitale, // per compatibilità
-                scadenza: scadenza,
-                note: tipo === 'tcm' ? 'TCM da sezione coperture attive' : ''
+                compagnia: inputCompagnia ? inputCompagnia.value : '',
+                compagniaAltro: inputAltro ? inputAltro.value : '',
+                premioAnnuo: premio,
+                scadenza: inputScadenza ? inputScadenza.value : '',
+                capitaleEuro: capitale,
+                capitale: capitale, // per retro-compatibilità
+                note: inputNote ? inputNote.value : ''
             };
             
-            console.log(`✅ Copertura ${tipo} trovata:`, coperture[tipo]);
+            console.log(`✅ Copertura ${key} letta e salvata:`, appStatePersona.user.copertureAttive[key]);
+        } else {
+            // Se esisteva una copertura precedente, marchiamola come non attiva
+            // ma non la cancelliamo per mantenere lo storico se serve
+            if (appStatePersona.user.copertureAttive[key]) {
+                appStatePersona.user.copertureAttive[key].active = false;
+            }
         }
+    }
+    
+    // IMPORTANTE: sincronizza anche con anagrafica per compatibilità legacy
+    appStatePersona.user.anagrafica = appStatePersona.user.anagrafica || {};
+    appStatePersona.user.anagrafica.copertureAttive = appStatePersona.user.copertureAttive;
+    
+    console.log("💾 Tutte le coperture lette da DOM:", appStatePersona.user.copertureAttive);
+    return appStatePersona.user.copertureAttive;
+}
     });
     
     // Salva nello stato globale
@@ -5216,62 +5250,26 @@ function calcolaRisultatiPersona() {
         ana.regioneCalcolata = regione;
     }
     
-            // ======================================================
-    // FIX LETTURA TCM - Ricerca aggressiva nel DOM
+        // ======================================================
+    // LETTURA CORRETTA COPERTURE V2
     // ======================================================
-    let tcmValore = 0;
-    let copertureVere = {};
     
-    // 1. Cerca in tutti gli input della pagina (non solo nel container)
-    const tuttiGliInput = document.querySelectorAll('input[type="text"], input[type="number"], input[type="hidden"]');
+    // Chiama la funzione corretta per leggere dal DOM
+    leggiCopertureAttiveV2();
     
-    tuttiGliInput.forEach(input => {
-        const valoreRaw = input.value || '';
-        // Pulisci: rimuove €, punti, spazi, e prende solo numeri
-        const numeriTrovati = valoreRaw.replace(/[€\s]/g, '').match(/[\d\.]+/);
-        if (numeriTrovati) {
-            const numero = parseFloat(numeriTrovati[0].replace(/\./g, ''));
-            // Se trovi un numero tra 10.000 e 999.999, è probabilmente un capitale assicurativo
-            if (numero >= 10000 && numero <= 999999) {
-                // Verifica se il contesto è TCM (cerca nel label vicino o nell'ID)
-                const labelText = input.previousElementSibling?.textContent || '';
-                const idText = input.id || '';
-                const placeholderText = input.placeholder || '';
-                
-                if (labelText.toLowerCase().includes('tcm') || 
-                    labelText.toLowerCase().includes('vita') ||
-                    idText.toLowerCase().includes('tcm') ||
-                    placeholderText.toLowerCase().includes('tcm')) {
-                    tcmValore = numero;
-                    console.log("🎯 TCM TROVATA:", numero, "in", idText || labelText);
-                }
-            }
-        }
-    });
+    // Usa direttamente lo stato aggiornato (leggiCopertureAttiveV2 ha già popolato user.copertureAttive)
+    const copertureVere = appStatePersona.user.copertureAttive || {};
     
-    // 2. Se non trovata, cerca in appState (per retrocompatibilità)
-    if (tcmValore === 0 && appStatePersona.copertureAttive?.tcm?.capitale) {
-        tcmValore = appStatePersona.copertureAttive.tcm.capitale;
-    }
+    // Estrai specificamente il valore TCM per log/debug
+    const tcmValore = copertureVere.tcm?.capitaleEuro || copertureVere.tcm?.capitale || 0;
     
-    // 3. Costruisci oggetto coperture
-    if (tcmValore > 0) {
-        copertureVere = {
-            tcm: {
-                active: true,
-                capitale: tcmValore,
-                capitaleEuro: tcmValore,
-                note: "Letta dal DOM"
-            }
-        };
-    }
-    
-    console.log("🔍 Valore TCM finale:", tcmValore);
+    console.log("🔍 TCM letto dallo stato:", tcmValore);
+    console.log("🔍 Tutte le coperture:", copertureVere);
     
     // Passa dati anagrafica + coperture dalla sezione corretta
     const datiGap = {
         ...ana,
-        redditoAnnuoLordo: redditoLordoNum, // Assicura sia numero
+        redditoAnnuoLordo: redditoLordoNum,
         copertureAttive: copertureVere
     };
     
