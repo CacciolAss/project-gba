@@ -5085,14 +5085,8 @@ function leggiCopertureAttiveV2() {
             
             let capitale = 0;
             if (inputCapitale && inputCapitale.value) {
-                // Parsing robusto: rimuove punti migliaia e €, converte virgola in punto
-                const valorePulito = inputCapitale.value.toString()
-                    .replace(/[€\s]/g, '')      // toglie € e spazi
-                    .replace(/\./g, '')          // toglie punti migliaia
-                    .replace(/,/g, '.');         // converte virgola decimale in punto
-                capitale = parseFloat(valorePulito) || 0;
+                capitale = parseFloat(inputCapitale.value) || 0;
             }
-            
             // Parsing premio (gestisce sia numero che stringa)
             let premio = '';
             if (inputPremio && inputPremio.value) {
