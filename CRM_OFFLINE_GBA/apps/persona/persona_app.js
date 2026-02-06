@@ -5110,7 +5110,6 @@ function leggiCopertureAttiveV2() {
             console.log(`✅ Copertura ${key} letta e salvata:`, appStatePersona.user.copertureAttive[key]);
         } else {
             // Se esisteva una copertura precedente, marchiamola come non attiva
-            // ma non la cancelliamo per mantenere lo storico se serve
             if (appStatePersona.user.copertureAttive[key]) {
                 appStatePersona.user.copertureAttive[key].active = false;
             }
@@ -5120,6 +5119,10 @@ function leggiCopertureAttiveV2() {
     // IMPORTANTE: sincronizza anche con anagrafica per compatibilità legacy
     appStatePersona.user.anagrafica = appStatePersona.user.anagrafica || {};
     appStatePersona.user.anagrafica.copertureAttive = appStatePersona.user.copertureAttive;
+    
+    console.log("💾 Tutte le coperture lette da DOM:", appStatePersona.user.copertureAttive);
+    return appStatePersona.user.copertureAttive;
+}
     
     
     // Salva nello stato globale (opzionale, già salvato in user.copertureAttive)
