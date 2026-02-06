@@ -5216,50 +5216,57 @@ function calcolaRisultatiPersona() {
         ana.regioneCalcolata = regione;
     }
     
-        // ======================================================
-    // FIX LETTURA COPERTURE - Da appState O direttamente da DOM
+            // ======================================================
+    // FIX LETTURA TCM - Ricerca aggressiva nel DOM
     // ======================================================
-    let copertureVere = appStatePersona.copertureAttive || {};
-    let tcmLettaDalDOM = 0;
+    let tcmValore = 0;
+    let copertureVere = {};
     
-    // Se appState è vuoto, leggi direttamente dai campi input
-    if (!copertureVere || Object.keys(copertureVere).length === 0) {
-        const container = document.getElementById('copertureAttiveV2Container');
-        if (container) {
-            // Cerca tutti gli input numerici/text nella sezione
-            const inputs = container.querySelectorAll('input[type="text"], input[type="number"], input[type="hidden"]');
-            
-            inputs.forEach(input => {
-                const valorePulito = input.value.replace(/[€\s\.]/g, '').replace(',', '.');
-                const numero = parseFloat(valorePulito);
+    // 1. Cerca in tutti gli input della pagina (non solo nel container)
+    const tuttiGliInput = document.querySelectorAll('input[type="text"], input[type="number"], input[type="hidden"]');
+    
+    tuttiGliInput.forEach(input => {
+        const valoreRaw = input.value || '';
+        // Pulisci: rimuove €, punti, spazi, e prende solo numeri
+        const numeriTrovati = valoreRaw.replace(/[€\s]/g, '').match(/[\d\.]+/);
+        if (numeriTrovati) {
+            const numero = parseFloat(numeriTrovati[0].replace(/\./g, ''));
+            // Se trovi un numero tra 10.000 e 999.999, è probabilmente un capitale assicurativo
+            if (numero >= 10000 && numero <= 999999) {
+                // Verifica se il contesto è TCM (cerca nel label vicino o nell'ID)
+                const labelText = input.previousElementSibling?.textContent || '';
+                const idText = input.id || '';
+                const placeholderText = input.placeholder || '';
                 
-                // Se è un numero grande (>10.000), probabilmente è un capitale assicurativo
-                if (numero > 10000) {
-                    // Determina il tipo dal contesto (label, id, o placeholder)
-                    const testoContesto = (input.id + ' ' + input.placeholder + ' ' + input.closest('div')?.textContent).toLowerCase();
-                    
-                    if (testoContesto.includes('tcm') || testoContesto.includes('vita') || testoContesto.includes('morte')) {
-                        tcmLettaDalDOM = numero;
-                        console.log("🎯 TCM trovata nel DOM:", numero);
-                    }
+                if (labelText.toLowerCase().includes('tcm') || 
+                    labelText.toLowerCase().includes('vita') ||
+                    idText.toLowerCase().includes('tcm') ||
+                    placeholderText.toLowerCase().includes('tcm')) {
+                    tcmValore = numero;
+                    console.log("🎯 TCM TROVATA:", numero, "in", idText || labelText);
                 }
-            });
-            
-            // Se abbiamo trovato una TCM, costruisci l'oggetto coperture
-            if (tcmLettaDalDOM > 0) {
-                copertureVere = {
-                    tcm: {
-                        active: true,
-                        capitale: tcmLettaDalDOM,
-                        capitaleEuro: tcmLettaDalDOM,
-                        note: "Letta da campo input Coperture Attive"
-                    }
-                };
             }
         }
+    });
+    
+    // 2. Se non trovata, cerca in appState (per retrocompatibilità)
+    if (tcmValore === 0 && appStatePersona.copertureAttive?.tcm?.capitale) {
+        tcmValore = appStatePersona.copertureAttive.tcm.capitale;
     }
     
-    console.log("🔍 Debug Coperture Finali:", copertureVere);
+    // 3. Costruisci oggetto coperture
+    if (tcmValore > 0) {
+        copertureVere = {
+            tcm: {
+                active: true,
+                capitale: tcmValore,
+                capitaleEuro: tcmValore,
+                note: "Letta dal DOM"
+            }
+        };
+    }
+    
+    console.log("🔍 Valore TCM finale:", tcmValore);
     
     // Passa dati anagrafica + coperture dalla sezione corretta
     const datiGap = {
@@ -5280,7 +5287,7 @@ function calcolaRisultatiPersona() {
         }
         
         // 2. Determina copertura privata (da calcolo o da lettura DOM se calcolo fallito)
-        let coperturaPrivata = gapMorteCalcolato.copertureEsistenti || 0;
+        let coperturaPrivata = gapMorteCalcolato.copertureEsistenti || tcmValore || 0;
         
         // FIX EMERGENZA: se calcolaGapMorte non ha trovato la TCM ma noi sì dal DOM
         if (coperturaPrivata === 0 && tcmLettaDalDOM > 0) {
