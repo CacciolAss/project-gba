@@ -5121,10 +5121,6 @@ function leggiCopertureAttiveV2() {
     appStatePersona.user.anagrafica = appStatePersona.user.anagrafica || {};
     appStatePersona.user.anagrafica.copertureAttive = appStatePersona.user.copertureAttive;
     
-    console.log("💾 Tutte le coperture lette da DOM:", appStatePersona.user.copertureAttive);
-    return appStatePersona.user.copertureAttive;
-}
-    });
     
     // Salva nello stato globale
     appStatePersona.copertureAttive = coperture;
