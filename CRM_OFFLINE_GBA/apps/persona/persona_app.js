@@ -5090,90 +5090,118 @@ function calcolaRisultatiPersona() {
         indiceGlobale = Math.round(((mediaGlobale - 1) / 4) * 100);
     }
 
-    // 2) Gap statale, normotipo, semaforo, incongruenze, coerenza
+        // 2) Gap statale, normotipo, semaforo, incongruenze, coerenza
     const gapStatale = calcolaGapStatalePersona();
         
     // NUOVO V2: Calcolo gap morte e diaria con dati reali INPS 2026
     const ana = appStatePersona.user.anagrafica || {};
     
-    // Calcola netto se non presente (serve per diaria)
-    if (!ana.redditoNetto && ana.redditoAnnuo && typeof FISCO_2026 !== 'undefined') {
-        // Mapping Provincia → Regione (essenziale per aliquote regionali)
-function getRegioneDaProvincia(sigla) {
-    const map = {
-        'RM': 'lazio', 'LT': 'lazio', 'FR': 'lazio', 'VT': 'lazio',
-        'MI': 'lombardia', 'MB': 'lombardia', 'BG': 'lombardia', 'BS': 'lombardia', 'CO': 'lombardia', 'CR': 'lombardia', 'LC': 'lombardia', 'LO': 'lombardia', 'MN': 'lombardia', 'PV': 'lombardia', 'SO': 'lombardia', 'VA': 'lombardia',
-        'TO': 'piemonte', 'AL': 'piemonte', 'AT': 'piemonte', 'BI': 'piemonte', 'CN': 'piemonte', 'NO': 'piemonte', 'VC': 'piemonte',
-        'FI': 'toscana', 'PO': 'toscana', 'PT': 'toscana', 'PI': 'toscana', 'LI': 'toscana', 'AR': 'toscana', 'GR': 'toscana', 'MS': 'toscana', 'SI': 'toscana',
-        'NA': 'campania', 'CE': 'campania', 'BN': 'campania', 'AV': 'campania', 'SA': 'campania',
-        'BA': 'puglia', 'BT': 'puglia', 'FG': 'puglia', 'BR': 'puglia', 'LE': 'puglia', 'TA': 'puglia',
-        'PA': 'sicilia', 'AG': 'sicilia', 'CL': 'sicilia', 'CT': 'sicilia', 'EN': 'sicilia', 'ME': 'sicilia', 'RG': 'sicilia', 'SR': 'sicilia', 'TP': 'sicilia',
-        'CA': 'sardegna', 'CI': 'sardegna', 'VS': 'sardegna', 'NU': 'sardegna', 'OG': 'sardegna', 'OT': 'sardegna', 'OR': 'sardegnia', 'SS': 'sardegna', 'SU': 'sardegna',
-        'BO': 'emilia-romagna', 'FC': 'emilia-romagna', 'FE': 'emilia-romagna', 'MO': 'emilia-romagna', 'PR': 'emilia-romagna', 'PC': 'emilia-romagna', 'RA': 'emilia-romagna', 'RE': 'emilia-romagna', 'RN': 'emilia-romagna',
-        'GE': 'liguria', 'IM': 'liguria', 'SP': 'liguria', 'SV': 'liguria',
-        'VE': 'veneto', 'BL': 'veneto', 'PD': 'veneto', 'RO': 'veneto', 'TV': 'veneto', 'VR': 'veneto', 'VI': 'veneto',
-        'BZ': 'trentino-alto-adige', 'TN': 'trentino-alto-adige',
-        'UD': 'friuli-venezia-giulia', 'GO': 'friuli-venezia-giulia', 'PN': 'friuli-venezia-giulia', 'TS': 'friuli-venezia-giulia'
-    };
-    return map[sigla?.toUpperCase()] || 'toscana'; // Fallback sicuro
-}
-
-// Recupera dati geografici reali
-const provincia = ana.provincia || '';
-const citta = ana.citta || ana.citta || '';
-const regione = ana.regione || getRegioneDaProvincia(provincia);
-
-const calcNetto = FISCO_2026.calcolaNettoPersona(
-    ana.redditoAnnuo, 
-    ana.situazioneLavorativa, 
-    regione, 
-    citta, 
-    ana.figliMinorenni || 0
-);
-
-// Salva anche la regione derivata per uso futuro
-ana.regioneCalcolata = regione;
-        ana.redditoNetto = calcNetto.nettoAnnuo;
-        ana.redditoNettoMensile = calcNetto.nettoMensile;
+    // FIX DATI GEOGRAFICI REALI + Parsing reddito robusto
+    function getRegioneDaProvincia(sigla) {
+        const map = {
+            'RM': 'lazio', 'LT': 'lazio', 'FR': 'lazio', 'VT': 'lazio',
+            'MI': 'lombardia', 'MB': 'lombardia', 'BG': 'lombardia', 'BS': 'lombardia', 'CO': 'lombardia', 
+            'CR': 'lombardia', 'LC': 'lombardia', 'LO': 'lombardia', 'MN': 'lombardia', 'PV': 'lombardia', 
+            'SO': 'lombardia', 'VA': 'lombardia',
+            'TO': 'piemonte', 'AL': 'piemonte', 'AT': 'piemonte', 'BI': 'piemonte', 'CN': 'piemonte', 
+            'NO': 'piemonte', 'VC': 'piemonte',
+            'FI': 'toscana', 'PO': 'toscana', 'PT': 'toscana', 'PI': 'toscana', 'LI': 'toscana', 
+            'AR': 'toscana', 'GR': 'toscana', 'MS': 'toscana', 'SI': 'toscana',
+            'NA': 'campania', 'CE': 'campania', 'BN': 'campania', 'AV': 'campania', 'SA': 'campania',
+            'BA': 'puglia', 'BT': 'puglia', 'FG': 'puglia', 'BR': 'puglia', 'LE': 'puglia', 'TA': 'puglia',
+            'PA': 'sicilia', 'AG': 'sicilia', 'CL': 'sicilia', 'CT': 'sicilia', 'EN': 'sicilia', 
+            'ME': 'sicilia', 'RG': 'sicilia', 'SR': 'sicilia', 'TP': 'sicilia',
+            'CA': 'sardegna', 'CI': 'sardegna', 'VS': 'sardegna', 'NU': 'sardegna', 'OG': 'sardegna', 
+            'OT': 'sardegna', 'OR': 'sardegna', 'SS': 'sardegna', 'SU': 'sardegna',
+            'BO': 'emilia-romagna', 'FC': 'emilia-romagna', 'FE': 'emilia-romagna', 'MO': 'emilia-romagna', 
+            'PR': 'emilia-romagna', 'PC': 'emilia-romagna', 'RA': 'emilia-romagna', 'RE': 'emilia-romagna', 
+            'RN': 'emilia-romagna',
+            'GE': 'liguria', 'IM': 'liguria', 'SP': 'liguria', 'SV': 'liguria',
+            'VE': 'veneto', 'BL': 'veneto', 'PD': 'veneto', 'RO': 'veneto', 'TV': 'veneto', 
+            'VR': 'veneto', 'VI': 'veneto',
+            'BZ': 'trentino-alto-adige', 'TN': 'trentino-alto-adige',
+            'UD': 'friuli-venezia-giulia', 'GO': 'friuli-venezia-giulia', 
+            'PN': 'friuli-venezia-giulia', 'TS': 'friuli-venezia-giulia',
+            'AQ': 'abruzzo', 'CH': 'abruzzo', 'PE': 'abruzzo', 'TE': 'abruzzo',
+            'MT': 'basilicata', 'PZ': 'basilicata',
+            'CB': 'molise', 'IS': 'molise',
+            'PG': 'umbria', 'TR': 'umbria',
+            'AO': 'valle-d-aosta'
+        };
+        return map[sigla?.toUpperCase()] || 'toscana';
     }
     
-    // ======================================================
-// FIX LETTURA COPERTURE - Dalla sezione dedicata, non da anagrafica
-// ======================================================
-const copertureVere = appStatePersona.copertureAttive || {};
-
-// Passa dati anagrafica + coperture dalla sezione corretta
-const datiGap = {
-    ...ana,
-    copertureAttive: copertureVere
-};
-
-const gapMorteCalcolato = calcolaGapMorte(datiGap);
-
-console.log("🔍 Debug Coperture:", {
-    origine: "appStatePersona.copertureAttive",
-    copertureTrovate: copertureVere,
-    tcmPresente: copertureVere.tcm ? "SÌ" : "NO"
-});
-    const diariaInvaliditaCalcolata = calcolaDiariaNecessaria(ana);
-
-    // ✅ FIX FASE 1: Integrazione Gap Morte corretto con TCM in gapStatale
-if (gapMorteCalcolato && gapStatale && gapStatale.morte) {
-    // Sovrascrivi i valori del gap statale con quelli corretti che includono la TCM
-    gapStatale.morte.adeguato = gapMorteCalcolato.fabbisognoTotale;
-    gapStatale.morte.gap = gapMorteCalcolato.gapMorte;
-    gapStatale.morte.coperturaPrivata = gapMorteCalcolato.copertureEsistenti;
-    gapStatale.morte.coperturaTotale = (gapStatale.morte.statale || 0) + gapMorteCalcolato.copertureEsistenti;
-    gapStatale.morte.stato = gapMorteCalcolato.gapMorte > 0 ? "INADEGUATO" : "ADEGUATO";
-    gapStatale.morte.dettaglioCopertureV2 = gapMorteCalcolato.dettaglioCoperture;
+    const provincia = ana.provincia || '';
+    const citta = ana.citta || '';
+    const regione = ana.regione || getRegioneDaProvincia(provincia);
     
-    console.log("✅ FIX TCM applicato:", {
-        fabbisogno: gapMorteCalcolato.fabbisognoTotale,
-        copertureTCM: gapMorteCalcolato.copertureEsistenti,
-        gapResiduo: gapMorteCalcolato.gapMorte,
-        anniProtezione: gapMorteCalcolato.anniProtezione
-    });
-}
+    // Parsing robusto reddito (gestisce "€ 45.000" o 45000)
+    const parseReddito = (val) => {
+        if (!val) return 0;
+        if (typeof val === 'number') return val;
+        const pulito = val.toString().replace(/[€\s\.]/g, '').replace(',', '.');
+        const num = parseFloat(pulito);
+        return isNaN(num) ? 0 : num;
+    };
+    
+    const redditoLordoNum = parseReddito(ana.redditoAnnuo);
+    
+    // Calcola netto se non presente (serve per diaria)
+    if (!ana.redditoNetto && redditoLordoNum > 0 && typeof FISCO_2026 !== 'undefined') {
+        const calcNetto = FISCO_2026.calcolaNettoPersona(
+            redditoLordoNum, 
+            ana.situazioneLavorativa, 
+            regione, 
+            citta, 
+            ana.figliMinorenni || 0
+        );
+        ana.redditoNetto = calcNetto.nettoAnnuo;
+        ana.redditoNettoMensile = calcNetto.nettoMensile;
+        ana.regioneCalcolata = regione;
+    }
+    
+    // FIX LETTURA COPERTURE - Dalla sezione dedicata V2
+    const copertureVere = appStatePersona.copertureAttive || {};
+    console.log("🔍 Debug Coperture Vere:", copertureVere);
+    
+    // Passa dati anagrafica + coperture dalla sezione corretta
+    const datiGap = {
+        ...ana,
+        redditoAnnuoLordo: redditoLordoNum, // Assicura sia numero
+        copertureAttive: copertureVere
+    };
+    
+    const gapMorteCalcolato = calcolaGapMorte(datiGap);
+    const diariaInvaliditaCalcolata = calcolaDiariaNecessaria(ana);
+    
+    // ✅ FIX FASE 1 COMPLETO - Integrazione forzata corretta in gapStatale
+    if (gapStatale && gapStatale.morte && gapMorteCalcolato) {
+        // 1. Forza calcolo copertura INPS se mancante (4.83x reddito lordo)
+        let coperturaStatale = gapStatale.morte.statale;
+        if (!coperturaStatale || coperturaStatale === 0) {
+            coperturaStatale = Math.round(redditoLordoNum * 4.83); // Stima INPS 2026
+            console.log("⚠️ Copertura statale mancante, calcolata fallback:", coperturaStatale);
+        }
+        
+        // 2. Aggiorna oggetto gapStatale.morte con valori corretti
+        gapStatale.morte.adeguato = gapMorteCalcolato.fabbisognoTotale || (redditoLordoNum * 10);
+        gapStatale.morte.statale = coperturaStatale;
+        gapStatale.morte.coperturaPrivata = gapMorteCalcolato.copertureEsistenti || 0;
+        gapStatale.morte.coperturaTotale = coperturaStatale + (gapMorteCalcolato.copertureEsistenti || 0);
+        
+        // 3. Calcolo gap finale: Adeguato - Statale - Privata (TCM)
+        const gapCalcolato = Math.max(0, gapStatale.morte.adeguato - coperturaStatale - (gapMorteCalcolato.copertureEsistenti || 0));
+        gapStatale.morte.gap = gapCalcolato;
+        gapStatale.morte.stato = gapCalcolato > 0 ? "INADEGUATO" : "ADEGUATO";
+        
+        console.log("✅ FIX TCM COMPLETATO:", {
+            redditoLordo: redditoLordoNum,
+            fabbisogno: gapStatale.morte.adeguato,
+            coperturaINPS: coperturaStatale,
+            coperturaPrivataTCM: gapStatale.morte.coperturaPrivata,
+            gapResiduo: gapStatale.morte.gap
+        });
+    }
     
     // Aggiungi ai risultati per uso nel render
     const userData = buildUserDataPersona();
