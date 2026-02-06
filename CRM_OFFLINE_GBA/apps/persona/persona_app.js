@@ -5122,11 +5122,11 @@ function leggiCopertureAttiveV2() {
     appStatePersona.user.anagrafica.copertureAttive = appStatePersona.user.copertureAttive;
     
     
-    // Salva nello stato globale
-    appStatePersona.copertureAttive = coperture;
-    
-    console.log("💾 Coperture Attive V2 lette e salvate:", coperture);
-    return coperture;
+    // Salva nello stato globale (opzionale, già salvato in user.copertureAttive)
+appStatePersona.copertureAttive = appStatePersona.user.copertureAttive;
+
+console.log("💾 Coperture Attive V2 lette e salvate:", appStatePersona.user.copertureAttive);
+return appStatePersona.user.copertureAttive;
 }
 
 /* =========================
@@ -5284,11 +5284,10 @@ function calcolaRisultatiPersona() {
         let coperturaPrivata = gapMorteCalcolato.copertureEsistenti || tcmValore || 0;
         
         // FIX EMERGENZA: se calcolaGapMorte non ha trovato la TCM ma noi sì dal DOM
-        if (coperturaPrivata === 0 && tcmLettaDalDOM > 0) {
-            coperturaPrivata = tcmLettaDalDOM;
-            console.log("🚨 Forzatura TCM dal DOM:", tcmLettaDalDOM);
-        }
-        
+if (coperturaPrivata === 0 && tcmValore > 0) {
+    coperturaPrivata = tcmValore;
+    console.log("🚨 Forzatura TCM dal DOM:", tcmValore);
+}
         // 3. Aggiorna oggetto gapStatale.morte
         gapStatale.morte.adeguato = gapMorteCalcolato.fabbisognoTotale || (redditoLordoNum * 10) + (parseReddito(ana.mutuoResiduo) || 0);
         gapStatale.morte.statale = coperturaStatale;
